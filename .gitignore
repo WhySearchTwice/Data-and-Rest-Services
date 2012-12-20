@@ -9,6 +9,7 @@
 .classpath
 .project
 .settings/
+/bin
 
 # Maven Files #
 target/
