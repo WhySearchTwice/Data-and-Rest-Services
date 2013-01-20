@@ -11,5 +11,8 @@
 .settings/
 /bin
 
+# IntelliJ Files #
+.idea/
+
 # Maven Files #
 target/

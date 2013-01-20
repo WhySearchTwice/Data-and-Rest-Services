@@ -7,7 +7,7 @@ import logging
 import shlex
 import os
 
-BASE_URL = 'http://emberdb.com/downloads/'
+BASE_URL = 'http://emberdb.com/downloads'
 INSTALLATION_DIR = '/opt/'
 FILES_TO_DOWNLOAD = [
     'apache-cassandra-1.2.0-bin.tar.gz',
@@ -28,6 +28,11 @@ def install():
         downloadFile(file)
         extractFile(file)
 
+    # Replace Cassandra configuration file
+    os.chdir('/opt/apache-cassandra-1.2.0/conf')
+    subprocess.call(shlex.split('sudo rm cassandra.yaml'))
+    subprocess.call(shlex.split('sudo wget %s/cassandra.yaml'))
+
 
 def start():
     logging.debug('Running start')
@@ -40,7 +45,7 @@ def uninstall():
 def downloadFile(filename):
     logging.debug('Downloading %s' % filename)
 
-    command = shlex.split('sudo wget %s%s' % (BASE_URL, filename))
+    command = shlex.split('sudo wget %s/ex%s' % (BASE_URL, filename))
     subprocess.check_call(command)
 
 
