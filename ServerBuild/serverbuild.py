@@ -8,11 +8,15 @@ import shlex
 import os
 
 BASE_URL = 'http://emberdb.com/downloads'
-INSTALLATION_DIR = '/opt/'
+INSTALLATION_DIR = '/opt'
 FILES_TO_DOWNLOAD = [
     'apache-cassandra-1.2.0-bin.tar.gz',
     'rexster-server-2.2.0.zip',
     'jdk-7u11-linux-x64.tar.gz'
+]
+UNZIPPED_LOCATIONS = [
+    'apache-cassandra-1.2.0',
+    'rexter-sever-2.2.0'
 ]
 
 
@@ -29,17 +33,52 @@ def install():
         extractFile(file)
 
     # Replace Cassandra configuration file
-    os.chdir('/opt/apache-cassandra-1.2.0/conf')
+    logging.debug('Installing Cassandra configuration file')
+    os.chdir('/opt/%s/conf' % UNZIPPED_LOCATIONS[0])
     subprocess.call(shlex.split('sudo rm cassandra.yaml'))
     subprocess.call(shlex.split('sudo wget %s/cassandra.yaml'))
+
+    # Create Cassandra symlink
+    subprocess.call(
+        shlex.split('sudo ln -s %s/%s/bin/cassandra /usr/bin/cassandra' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[0])))
+
+    # Replace the Rexter configuration file
+    logging.debug('Installing Rexter configuration file')
+    os.chdir('%s/%s' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[1]))
+    subprocess.call(shlex.split('sudo rm rexter.xml'))
+    subprocess.call(shlex.split('sudo wget %s/rexter.xml'))
+
+    # Create Rexter symlink
+    subprocess.call(
+        shlex.split('sudo ln -s %s/%s/bin/rexter.sh /usr/bin/rexter' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[1])))
+
+    # Install JDK
+    logging.debug('Installing JDK')
 
 
 def start():
     logging.debug('Running start')
 
+    # Start Cassandra
+    os.chdir('%s/%s/bin' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[0]))
+    os.call(shlex.split('./cassandra'))
+
+    # Start Rexter
+    os.chdir('%s/%s/bin' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[1]))
+    os.call(shlex.split('./rexter.sh &'))
+
 
 def uninstall():
     logging.debug('Running uninstall')
+    os.chdir(INSTALLATION_DIR)
+
+    # TODO: Stop the services before deleting the files
+
+    logging.debug('Deleting Cassandra')
+    os.call(shlex.split('sudo rm -r %s' % UNZIPPED_LOCATIONS[0]))
+
+    logging.debug('Deleting Rexter')
+    os.call(shlex.split('sudo rm -r %s' % UNZIPPED_LOCATIONS[1]))
 
 
 def downloadFile(filename):
