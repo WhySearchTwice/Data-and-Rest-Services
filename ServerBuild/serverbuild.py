@@ -10,13 +10,9 @@ import os
 BASE_URL = 'http://emberdb.com/downloads'
 INSTALLATION_DIR = '/opt'
 FILES_TO_DOWNLOAD = [
-    'apache-cassandra-1.2.0-bin.tar.gz',
-    'rexster-server-2.2.0.zip',
-    'jdk-7u11-linux-x64.tar.gz'
-]
-UNZIPPED_LOCATIONS = [
-    'apache-cassandra-1.2.0',
-    'rexter-sever-2.2.0'
+    {'zipped': 'apache-cassandra-1.2.0-bin.tar.gz', 'unzipped': 'apache-cassandra-1.2.0'},
+    {'zipped': 'rexster-server-2.2.0.zip', 'unzipped': 'rexster-server-2.2.0'},
+    {'zipped': 'jdk-7u11-linux-x64.tar.gz', 'unzipped': ''}
 ]
 
 
@@ -33,27 +29,26 @@ def install():
 
     for file in FILES_TO_DOWNLOAD:
         downloadFile(file)
-        extractFile(file)
 
     # Replace Cassandra configuration file
     logging.debug('Installing Cassandra configuration file')
-    os.chdir('/opt/%s/conf' % UNZIPPED_LOCATIONS[0])
+    os.chdir('/opt/%s/conf' % FILES_TO_DOWNLOAD[0]['unzipped'])
     subprocess.call(shlex.split('sudo rm cassandra.yaml'))
-    subprocess.call(shlex.split('sudo wget %s/cassandra.yaml'))
+    subprocess.call(shlex.split('sudo wget %s/cassandra.yaml' % BASE_URL))
 
     # Create Cassandra symlink
     subprocess.call(
-        shlex.split('sudo ln -s %s/%s/bin/cassandra /usr/bin/cassandra' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[0])))
+        shlex.split('sudo ln -s %s/%s/bin/cassandra /usr/bin/cassandra' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[0]['unzipped'])))
 
-    # Replace the Rexter configuration file
-    logging.debug('Installing Rexter configuration file')
-    os.chdir('%s/%s' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[1]))
-    subprocess.call(shlex.split('sudo rm rexter.xml'))
-    subprocess.call(shlex.split('sudo wget %s/rexter.xml'))
+    # Replace the rexster configuration file
+    logging.debug('Installing Rexster configuration file')
+    os.chdir('%s/%s' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
+    subprocess.call(shlex.split('sudo rm rexster.xml'))
+    subprocess.call(shlex.split('sudo wget %s/rexster.xml' % BASE_URL))
 
-    # Create Rexter symlink
+    # Create rexster symlink
     subprocess.call(
-        shlex.split('sudo ln -s %s/%s/bin/rexter.sh /usr/bin/rexter' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[1])))
+        shlex.split('sudo ln -s %s/%s/bin/rexster.sh /usr/bin/rexster' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped'])))
 
     # Install JDK
     logging.debug('Installing JDK')
@@ -63,12 +58,12 @@ def start():
     logging.debug('Running start')
 
     # Start Cassandra
-    os.chdir('%s/%s/bin' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[0]))
+    os.chdir('%s/%s/bin' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[0]['unzipped']))
     os.call(shlex.split('./cassandra'))
 
-    # Start Rexter
-    os.chdir('%s/%s/bin' % (INSTALLATION_DIR, UNZIPPED_LOCATIONS[1]))
-    os.call(shlex.split('./rexter.sh &'))
+    # Start rexster
+    os.chdir('%s/%s/bin' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
+    os.call(shlex.split('./rexster.sh &'))
 
 
 def uninstall():
@@ -78,39 +73,43 @@ def uninstall():
     # TODO: Stop the services before deleting the files
 
     logging.debug('Deleting Cassandra')
-    os.call(shlex.split('sudo rm -r %s' % UNZIPPED_LOCATIONS[0]))
+    os.call(shlex.split('sudo rm -r %s' % FILES_TO_DOWNLOAD[0]['unzipped']))
 
-    logging.debug('Deleting Rexter')
-    os.call(shlex.split('sudo rm -r %s' % UNZIPPED_LOCATIONS[1]))
-
-
-def downloadFile(filename):
-    logging.debug('Downloading %s' % filename)
-
-    command = shlex.split('sudo wget %s/%s' % (BASE_URL, filename))
-    subprocess.check_call(command)
+    logging.debug('Deleting rexster')
+    os.call(shlex.split('sudo rm -r %s' % FILES_TO_DOWNLOAD[1]['unzipped']))
 
 
-def extractFile(filename):
-    logging.debug('Extracting %s' % filename)
+def downloadFile(file):
+    logging.debug('Downloading %s' % file['zipped'])
+
+    if not os.path.exists('%s/%s' % (INSTALLATION_DIR, file['unzipped'])):
+        command = shlex.split('sudo wget %s/%s' % (BASE_URL, file['zipped']))
+        subprocess.check_call(command)
+        extractFile(file)
+    else:
+        logging.debug('File already exists')
+
+
+def extractFile(file):
+    logging.debug('Extracting %s' % file['zipped'])
 
     command = 'sudo '
-    if '.tar.gz' in filename:
-        command += 'tar xzf %s' % filename
-    elif '.zip' in filename:
-        command += 'unzip %s' % filename
-    elif '.tar.bz2' in filename:
-        command += 'tar xjf %s' % filename
+    if '.tar.gz' in file['zipped']:
+        command += 'tar xzf %s' % file['zipped']
+    elif '.zip' in file['zipped']:
+        command += 'unzip %s' % file['zipped']
+    elif '.tar.bz2' in file['zipped']:
+        command += 'tar xjf %s' % file['zipped']
     else:
-        logging.critical('Unknown archive format, unable to extract %s' % filename)
+        logging.critical('Unknown archive format, unable to extract %s' % file['zipped'])
         exit()
 
     command = shlex.split(command)
     subprocess.check_call(command)
 
-    logging.debug('Deleting original archive of %s' % filename)
+    logging.debug('Deleting original archive of %s' % file['zipped'])
 
-    command = shlex.split('sudo rm %s' % filename)
+    command = shlex.split('sudo rm %s' % file['zipped'])
     subprocess.check_call(command)
 
 
