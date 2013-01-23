@@ -28,6 +28,9 @@ def all():
 def install():
     logging.debug('Running install')
 
+    logging.debug('Installing unzip')
+    subprocess.call(shlex.split('sudo apt-get install unzip'))
+
     for file in FILES_TO_DOWNLOAD:
         downloadFile(file)
         extractFile(file)
@@ -84,7 +87,7 @@ def uninstall():
 def downloadFile(filename):
     logging.debug('Downloading %s' % filename)
 
-    command = shlex.split('sudo wget %s/ex%s' % (BASE_URL, filename))
+    command = shlex.split('sudo wget %s/%s' % (BASE_URL, filename))
     subprocess.check_call(command)
 
 
