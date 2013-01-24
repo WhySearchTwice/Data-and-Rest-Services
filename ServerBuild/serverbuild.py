@@ -7,12 +7,12 @@ import logging
 import shlex
 import os
 
-BASE_URL = 'http://emberdb.com/downloads'
+BASE_URL = 'https://s3.amazonaws.com/why-search-twice'
 INSTALLATION_DIR = '/opt'
 FILES_TO_DOWNLOAD = [
     {'zipped': 'apache-cassandra-1.2.0-bin.tar.gz', 'unzipped': 'apache-cassandra-1.2.0'},
     {'zipped': 'rexster-server-2.2.0.zip', 'unzipped': 'rexster-server-2.2.0'},
-    {'zipped': 'jdk-7u11-linux-x64.tar.gz', 'unzipped': ''}
+    {'zipped': 'jdk-7u11-linux-x64.tar.gz', 'unzipped': 'jdk1.7.0_11'}
 ]
 
 
@@ -52,6 +52,9 @@ def install():
 
     # Install JDK
     logging.debug('Installing JDK')
+    subprocess.call(shlex.split('sudo ln -s %s/%s/bin/java /usr/bin/java' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped'])))
+    subprocess.call(shlex.split('sudo ln -s %s/%s/bin/javac /usr/bin/javac' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped'])))
+    subprocess.call(shlex.split('sudo ln -s %s/%s/bin/javah /usr/bin/javah' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped'])))
 
 
 def start():
@@ -59,11 +62,16 @@ def start():
 
     # Start Cassandra
     os.chdir('%s/%s/bin' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[0]['unzipped']))
-    os.call(shlex.split('./cassandra'))
+    subprocess.Popen(shlex.split('sudo ./cassandra &'))
+
+    logging.debug('Waiting a few seconds to allow Cassandra to start...')
+
 
     # Start rexster
-    os.chdir('%s/%s/bin' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
-    os.call(shlex.split('./rexster.sh &'))
+    os.chdir('%s/%s' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
+    subprocess.Popen(shlex.split('sudo ./bin/rexster.sh -s &'))
+
+    logging.debug('Processes started')
 
 
 def uninstall():
@@ -73,10 +81,10 @@ def uninstall():
     # TODO: Stop the services before deleting the files
 
     logging.debug('Deleting Cassandra')
-    os.call(shlex.split('sudo rm -r %s' % FILES_TO_DOWNLOAD[0]['unzipped']))
+    subprocess.call(shlex.split('sudo rm -r %s' % FILES_TO_DOWNLOAD[0]['unzipped']))
 
     logging.debug('Deleting rexster')
-    os.call(shlex.split('sudo rm -r %s' % FILES_TO_DOWNLOAD[1]['unzipped']))
+    subprocess.call(shlex.split('sudo rm -r %s' % FILES_TO_DOWNLOAD[1]['unzipped']))
 
 
 def downloadFile(file):
@@ -97,7 +105,7 @@ def extractFile(file):
     if '.tar.gz' in file['zipped']:
         command += 'tar xzf %s' % file['zipped']
     elif '.zip' in file['zipped']:
-        command += 'unzip %s' % file['zipped']
+        command += 'unzip -q %s' % file['zipped']
     elif '.tar.bz2' in file['zipped']:
         command += 'tar xjf %s' % file['zipped']
     else:
