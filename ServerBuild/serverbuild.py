@@ -5,6 +5,7 @@ from sys import exit
 import subprocess
 import logging
 import shlex
+import time
 import os
 
 BASE_URL = 'https://s3.amazonaws.com/why-search-twice'
@@ -62,10 +63,10 @@ def start():
 
     # Start Cassandra
     os.chdir('%s/%s/bin' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[0]['unzipped']))
-    subprocess.Popen(shlex.split('sudo ./cassandra &'))
+    subprocess.Popen(shlex.split('sudo ./cassandra'))
 
     logging.debug('Waiting a few seconds to allow Cassandra to start...')
-
+    time.sleep(10)
 
     # Start rexster
     os.chdir('%s/%s' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
