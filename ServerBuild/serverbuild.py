@@ -19,7 +19,6 @@ FILES_TO_DOWNLOAD = [
 
 def all():
     install()
-    start()
 
 
 def install():
@@ -56,6 +55,15 @@ def install():
     subprocess.call(shlex.split('sudo ln -s %s/%s/bin/java /usr/bin/java' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped'])))
     subprocess.call(shlex.split('sudo ln -s %s/%s/bin/javac /usr/bin/javac' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped'])))
     subprocess.call(shlex.split('sudo ln -s %s/%s/bin/javah /usr/bin/javah' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped'])))
+    
+    start()
+
+    # Initialize the indicies
+    logging.debug('Initializing the indicies')
+    subprocess.call(shlex.split('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/type'))
+    subprocess.call(shlex.split('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/username'))
+    subprocess.call(shlex.split('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/pageOpenTime'))
+    subprocess.call(shlex.split('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/pageCloseTime'))
 
 
 def start():
@@ -65,14 +73,19 @@ def start():
     os.chdir('%s/%s/bin' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[0]['unzipped']))
     subprocess.Popen(shlex.split('sudo ./cassandra'))
 
-    logging.debug('Waiting a few seconds to allow Cassandra to start...')
+    logging.info('Waiting a few seconds to allow Cassandra to start...')
     time.sleep(10)
+    logging.info('Waiting complete, continuing')
 
     # Start rexster
     os.chdir('%s/%s' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
     subprocess.Popen(shlex.split('sudo ./bin/rexster.sh -s &'))
 
-    logging.debug('Processes started')
+    logging.info('Processes started')
+
+    logging.info('Waiting a few seconds to allow Rexter to start...')
+    time.sleep(10)
+    logging.info('Waiting complete, continuing')
 
 
 def uninstall():
@@ -143,6 +156,9 @@ if __name__ == '__main__':
         logging.error('Cannot install and uninstall simultaneously')
     elif (options.install and options.all) or (options.start and options.all):
         logging.warning('--all replaces --install and --start')
+    
+    if (options.install):
+        logging.info('Note: Install has an implied start to allow graph to initialize')
 
     # Move to the installation directory
     os.chdir(INSTALLATION_DIR)
