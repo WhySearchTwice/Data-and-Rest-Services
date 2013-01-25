@@ -6,6 +6,7 @@ import subprocess
 import logging
 import shlex
 import time
+import sys
 import os
 
 BASE_URL = 'https://s3.amazonaws.com/why-search-twice'
@@ -150,6 +151,11 @@ if __name__ == '__main__':
     parser.add_option('-u', '--uninstall', action='store_true', dest='uninstall',
         help='Remove all downloaded components')
     (options, args) = parser.parse_args()
+
+    # Verify that the script is run as root
+    if os.geteuid() != 0:
+        logging.fatal('Please run as root')
+        sys.exit(1)
 
     # Verify option combinations are valid
     if options.install and options.uninstall:
