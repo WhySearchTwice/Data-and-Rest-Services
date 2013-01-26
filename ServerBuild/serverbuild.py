@@ -89,6 +89,21 @@ def start():
     logging.info('Waiting complete, continuing')
 
 
+def stop():
+    logging.debug('Running stop')
+
+    # Stop Rexster
+    os.chdir('%s/%s' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
+    subprocess.Popen(shlex.split('sudo ./bin/rexster.sh -x'))
+
+    logging.info('Waiting a few seconds to allow Rexster to stop...')
+    time.sleep(3)
+    logging.info('Waiting complete, continuing')
+
+    # Stop Cassandra
+    logging.warn('Cassandra cannot be killed programmatically. Please use "ps aux | grep cassandra" and "sudo kill -9 <PID>"')
+
+
 def uninstall():
     logging.debug('Running uninstall')
     os.chdir(INSTALLATION_DIR)
@@ -164,7 +179,7 @@ if __name__ == '__main__':
         logging.error('Cannot install and uninstall simultaneously')
     elif (options.install and options.all) or (options.start and options.all):
         logging.warning('--all replaces --install and --start')
-    elif not options.all and not options.install and not options.start and not options.uninstall:
+    elif not options.all and not options.install and not options.start and not options.stop and not options.uninstall:
         parser.print_help()
         sys.exit(0)
     
@@ -181,5 +196,7 @@ if __name__ == '__main__':
         install()
     elif options.start:
         start()
+    elif options.stop:
+        stop()
     elif options.uninstall:
         uninstall()
