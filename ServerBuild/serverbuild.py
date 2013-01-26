@@ -145,7 +145,9 @@ if __name__ == '__main__':
     parser.add_option('-i', '--install', action='store_true', dest='install',
         help='Download and install all required components')
     parser.add_option('-s', '--start', action='store_true', dest='start',
-        help='Start all components (assumes already downloaded')
+        help='Start all components (assumes already downloaded)')
+    parser.add_option('-x', '--stop', action='store_true', dest='stop',
+        help='Stop all running components')
     parser.add_option('-a', '--all', action='store_true', dest='all',
         help='Download, install, and start all required components')
     parser.add_option('-u', '--uninstall', action='store_true', dest='uninstall',
@@ -162,6 +164,9 @@ if __name__ == '__main__':
         logging.error('Cannot install and uninstall simultaneously')
     elif (options.install and options.all) or (options.start and options.all):
         logging.warning('--all replaces --install and --start')
+    elif not options.all and not options.install and not options.start and not options.uninstall:
+        parser.print_help()
+        sys.exit(0)
     
     if (options.install):
         logging.info('Note: Install has an implied start to allow graph to initialize')
