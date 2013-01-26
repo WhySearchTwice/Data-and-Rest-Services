@@ -26,7 +26,7 @@ def install():
     logging.debug('Running install')
 
     logging.debug('Installing unzip')
-    subprocess.call(shlex.split('sudo apt-get install unzip'))
+    executeCommand('sudo apt-get install unzip')
 
     for file in FILES_TO_DOWNLOAD:
         downloadFile(file)
@@ -34,37 +34,37 @@ def install():
     # Replace Cassandra configuration file
     logging.debug('Installing Cassandra configuration file')
     os.chdir('/opt/%s/conf' % FILES_TO_DOWNLOAD[0]['unzipped'])
-    subprocess.call(shlex.split('sudo rm cassandra.yaml'))
-    subprocess.call(shlex.split('sudo wget %s/cassandra.yaml' % BASE_URL))
+    executeCommand('sudo rm cassandra.yaml')
+    executeCommand('sudo wget %s/cassandra.yaml' % BASE_URL)
 
     # Create Cassandra symlink
-    subprocess.call(
-        shlex.split('sudo ln -s %s/%s/bin/cassandra /usr/bin/cassandra' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[0]['unzipped'])))
+    executeCommand(
+        'sudo ln -s %s/%s/bin/cassandra /usr/bin/cassandra' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[0]['unzipped']))
 
     # Replace the rexster configuration file
     logging.debug('Installing Rexster configuration file')
     os.chdir('%s/%s' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
-    subprocess.call(shlex.split('sudo rm rexster.xml'))
-    subprocess.call(shlex.split('sudo wget %s/rexster.xml' % BASE_URL))
+    executeCommand('sudo rm rexster.xml')
+    executeCommand('sudo wget %s/rexster.xml' % BASE_URL)
 
     # Create rexster symlink
-    subprocess.call(
-        shlex.split('sudo ln -s %s/%s/bin/rexster.sh /usr/bin/rexster' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped'])))
+    executeCommand(
+        'sudo ln -s %s/%s/bin/rexster.sh /usr/bin/rexster' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
 
     # Install JDK
     logging.debug('Installing JDK')
-    subprocess.call(shlex.split('sudo ln -s %s/%s/bin/java /usr/bin/java' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped'])))
-    subprocess.call(shlex.split('sudo ln -s %s/%s/bin/javac /usr/bin/javac' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped'])))
-    subprocess.call(shlex.split('sudo ln -s %s/%s/bin/javah /usr/bin/javah' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped'])))
-    
+    executeCommand('sudo ln -s %s/%s/bin/java /usr/bin/java' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped']))
+    executeCommand('sudo ln -s %s/%s/bin/javac /usr/bin/javac' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped']))
+    executeCommand('sudo ln -s %s/%s/bin/javah /usr/bin/javah' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[2]['unzipped']))
+
     start()
 
     # Initialize the indicies
     logging.debug('Initializing the indicies')
-    subprocess.call(shlex.split('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/type'))
-    subprocess.call(shlex.split('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/username'))
-    subprocess.call(shlex.split('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/pageOpenTime'))
-    subprocess.call(shlex.split('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/pageCloseTime'))
+    executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/type')
+    executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/username')
+    executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/pageOpenTime')
+    executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/pageCloseTime')
 
 
 def start():
@@ -72,7 +72,7 @@ def start():
 
     # Start Cassandra
     os.chdir('%s/%s/bin' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[0]['unzipped']))
-    subprocess.Popen(shlex.split('sudo ./cassandra'))
+    executeCommand('sudo ./cassandra', fireAndForget=True)
 
     logging.info('Waiting a few seconds to allow Cassandra to start...')
     time.sleep(10)
@@ -80,7 +80,7 @@ def start():
 
     # Start rexster
     os.chdir('%s/%s' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
-    subprocess.Popen(shlex.split('sudo ./bin/rexster.sh -s &'))
+    executeCommand('sudo ./bin/rexster.sh -s &', fireAndForget=True)
 
     logging.info('Processes started')
 
@@ -94,35 +94,35 @@ def stop():
 
     # Stop Rexster
     os.chdir('%s/%s' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
-    subprocess.Popen(shlex.split('sudo ./bin/rexster.sh -x'))
+    executeCommand('sudo ./bin/rexster.sh -x', fireAndForget=True)
 
     logging.info('Waiting a few seconds to allow Rexster to stop...')
     time.sleep(3)
     logging.info('Waiting complete, continuing')
 
     # Stop Cassandra
-    logging.warn('Cassandra cannot be killed programmatically. Please use "ps aux | grep cassandra" and "sudo kill -9 <PID>"')
+    logging.warn(
+        'Cassandra cannot be killed programmatically. Please use "ps aux | grep cassandra" and "sudo kill -9 <PID>"')
 
 
 def uninstall():
+    stop()
+
     logging.debug('Running uninstall')
     os.chdir(INSTALLATION_DIR)
 
-    # TODO: Stop the services before deleting the files
-
     logging.debug('Deleting Cassandra')
-    subprocess.call(shlex.split('sudo rm -r %s' % FILES_TO_DOWNLOAD[0]['unzipped']))
+    executeCommand('sudo rm -r %s' % FILES_TO_DOWNLOAD[0]['unzipped'])
 
     logging.debug('Deleting rexster')
-    subprocess.call(shlex.split('sudo rm -r %s' % FILES_TO_DOWNLOAD[1]['unzipped']))
+    executeCommand('sudo rm -r %s' % FILES_TO_DOWNLOAD[1]['unzipped'])
 
 
 def downloadFile(file):
     logging.debug('Downloading %s' % file['zipped'])
 
     if not os.path.exists('%s/%s' % (INSTALLATION_DIR, file['unzipped'])):
-        command = shlex.split('sudo wget %s/%s' % (BASE_URL, file['zipped']))
-        subprocess.check_call(command)
+        executeCommand('sudo wget %s/%s' % (BASE_URL, file['zipped']))
         extractFile(file)
     else:
         logging.debug('File already exists')
@@ -142,13 +142,23 @@ def extractFile(file):
         logging.critical('Unknown archive format, unable to extract %s' % file['zipped'])
         exit()
 
-    command = shlex.split(command)
-    subprocess.check_call(command)
+    executeCommand(command)
 
     logging.debug('Deleting original archive of %s' % file['zipped'])
 
-    command = shlex.split('sudo rm %s' % file['zipped'])
-    subprocess.check_call(command)
+    executeCommand('sudo rm %s' % file['zipped'])
+
+
+def executeCommand(command, fireAndForget=False):
+    splitCommand = shlex.split(command)
+    if fireAndForget:
+        subprocess.Popen(splitCommand)
+    else:
+        try:
+            subprocess.check_output(splitCommand)
+        except subprocess.CalledProcessError as e:
+            logging.error('A command failed to run properly: %s' % command)
+            print(e.output)
 
 
 if __name__ == '__main__':
@@ -182,7 +192,7 @@ if __name__ == '__main__':
     elif not options.all and not options.install and not options.start and not options.stop and not options.uninstall:
         parser.print_help()
         sys.exit(0)
-    
+
     if (options.install):
         logging.info('Note: Install has an implied start to allow graph to initialize')
 
