@@ -71,8 +71,9 @@
             <extensions>
                 <allows>
                     <allow>tp:gremlin</allow>
+                    <allow>parsley:*</allow>
                 </allows>
-            </extensions> 
+            </extensions>
         </graph>
     </graphs>
 </rexster>
