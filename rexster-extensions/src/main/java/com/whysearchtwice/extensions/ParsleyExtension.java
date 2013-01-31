@@ -7,7 +7,6 @@ import java.util.Map;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
-import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.rexster.RexsterResourceContext;
@@ -64,10 +63,8 @@ public class ParsleyExtension extends AbstractRexsterExtension {
                 Vertex predecessorVertex = graph.getVertex(attributes.get("predecessor"));
                 if (predecessorVertex != null) {
                     System.out.println("Creating the predecessor edges");
-                    Edge e1 = graph.addEdge(null, newVertex, predecessorVertex, "successorTo");
-                    Edge e2 = graph.addEdge(null, predecessorVertex, newVertex, "predecessorTo");
-                    System.out.println(e1);
-                    System.out.println(e2);
+                    graph.addEdge(null, newVertex, predecessorVertex, "successorTo");
+                    graph.addEdge(null, predecessorVertex, newVertex, "predecessorTo");
                 } else {
                     map.put("error", "could not find predecessor");
                 }
