@@ -6,13 +6,15 @@
 *.ear
 
 # Eclipse Files #
-.classpath
-.project
-.settings/
-/bin
+*.classpath
+*.project
+*.settings/
+*/bin
 
 # IntelliJ Files #
-.idea/
+*.idea/
+*.eml
+*.iml
 
 # Maven Files #
-target/
+*target/

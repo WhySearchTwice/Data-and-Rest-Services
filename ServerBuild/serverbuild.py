@@ -61,10 +61,10 @@ def install():
 
     # Initialize the indicies
     logging.debug('Initializing the indicies')
-    executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/type')
+    executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/domain')
     executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/username')
+	executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/userguid')
     executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/pageOpenTime')
-    executeCommand('curl --data "" http://localhost:8182/graphs/WhySearchTwice/keyindices/vertex/pageCloseTime')
 
 
 def start():
