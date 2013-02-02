@@ -17,11 +17,11 @@ public class UserExtension extends AbstractParsleyExtension {
 
     @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, method = HttpMethod.POST)
     @ExtensionDescriptor(description = "update a username or attach a device")
-    public ExtensionResponse updateVertex(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
+    public ExtensionResponse updateUser(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
         JSONObject attributes = context.getRequestObject();
         try {
             if (attributes.has("ownedDeviceGuid")) {
-                linkOwnedDevice(graph, attributes.getString("deviceGuid"), attributes.getString("userGuid"));
+                linkOwnedDevice(graph, attributes.getString("ownedDeviceGuid"), attributes.getString("userGuid"));
             } else if (attributes.has("username")) {
                 updateUsername(graph, attributes.getString("userGuid"), attributes.getString("username"));
             }

@@ -1,5 +1,7 @@
 package com.whysearchtwice.rexster.extension;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -49,24 +51,35 @@ public class PageViewExtension extends AbstractParsleyExtension {
             e.printStackTrace();
         }
 
-        // Connect to the device or create if necessary
+        // Link to the device the pageView came from
         try {
-            Vertex device;
-            if (attributes.has("deviceGuid")) {
-                // We already have a device, just attach the page
-                device = graph.getVertex(attributes.get("deviceGuid"));
-            } else {
-                // Must create a device and tie to user
-                Vertex user = (attributes.has("userGuid")) ? graph.getVertex(attributes.get("userGuid")) : graph.addVertex(null);
-                device = graph.addVertex(null);
+            Vertex device = (attributes.has("deviceGuid")) ? graph.getVertex(attributes.get("deviceGuid")) : graph.addVertex(null);
+            Vertex user = (attributes.has("userGuid")) ? graph.getVertex(attributes.get("userGuid")) : graph.addVertex(null);
+
+            if (!attributes.has("deviceGuid")) {
+                // Link the device to the user if it did not already exist
                 graph.addEdge(null, user, device, "owns");
                 graph.addEdge(null, device, user, "ownedBy");
-                map.put("userGuid", user.getId().toString());
-                map.put("deviceGuid", device.getId().toString());
             }
+
+            map.put("userGuid", user.getId().toString());
+            map.put("deviceGuid", device.getId().toString());
 
             graph.addEdge(null, newVertex, device, "viewedOn");
             graph.addEdge(null, device, newVertex, "viewed");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        // Link to the domain of the page URL
+        try {
+            if (attributes.has("pageUrl")) {
+                Vertex domainVertex = findOrCreateDomainVertex(graph, extractDomain(attributes.getString("pageUrl")));
+                graph.addEdge(null, newVertex, domainVertex, "under");
+                graph.addEdge(null, domainVertex, newVertex, "over");
+            }
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -120,6 +133,23 @@ public class PageViewExtension extends AbstractParsleyExtension {
             } catch (JSONException e1) {
                 e1.printStackTrace();
             }
+        }
+    }
+
+    private String extractDomain(String pageUrl) throws URISyntaxException {
+        URI uri = new URI(pageUrl);
+        String domain = uri.getHost();
+        return domain.startsWith("www.") ? domain.substring(4) : domain;
+    }
+
+    private Vertex findOrCreateDomainVertex(Graph graph, String domain) {
+        Iterator<Vertex> iter = graph.getVertices("domain", domain).iterator();
+        if (iter.hasNext()) {
+            return iter.next();
+        } else {
+            Vertex newVertex = graph.addVertex(null);
+            newVertex.setProperty("domain", domain);
+            return newVertex;
         }
     }
 }
