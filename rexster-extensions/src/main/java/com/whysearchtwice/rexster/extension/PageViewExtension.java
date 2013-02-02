@@ -38,11 +38,11 @@ public class PageViewExtension extends AbstractParsleyExtension {
         // Create an edge to the Predecessor or Parent if needed
         try {
             if (attributes.has("predecessor")) {
-                boolean result = createEdge(graph, newVertex, attributes.getInt("predecessor"), "successorTo", "predecessorTo");
+                boolean result = createEdge(graph, newVertex, attributes.getString("predecessor"), "successorTo", "predecessorTo");
                 map.put("predecessor", (result) ? "predecessor created successfully" : "predecessor could not be created");
             }
             if (attributes.has("parent")) {
-                boolean result = createEdge(graph, newVertex, attributes.getInt("parent"), "childOf", "parentOf");
+                boolean result = createEdge(graph, newVertex, attributes.getString("parent"), "childOf", "parentOf");
                 map.put("parent", (result) ? "parent created successfully" : "parent could not be created");
             }
         } catch (JSONException e) {
@@ -51,17 +51,24 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
         // Connect to the device or create if necessary
         try {
+            Vertex device;
             if (attributes.has("deviceGuid")) {
                 // We already have a device, just attach the page
-                Vertex device = graph.getVertex(attributes.get("deviceGuid"));
+                device = graph.getVertex(attributes.get("deviceGuid"));
             } else {
                 // Must create a device and tie to user
-                // TODO: Do not have to create a function to retrieve by ID
-                Vertex user = attributes.has("userGuid") ? getUser(attributes.get("userGuid")) : getUser();
-                Vertex device = createDevice(user);
+                Vertex user = (attributes.has("userGuid")) ? graph.getVertex(attributes.get("userGuid")) : graph.addVertex(null);
+                device = graph.addVertex(null);
+                graph.addEdge(null, user, device, "owns");
+                graph.addEdge(null, device, user, "ownedBy");
+                map.put("userGuid", user.getId().toString());
+                map.put("deviceGuid", device.getId().toString());
             }
-        } catch (JSONException e) {
 
+            graph.addEdge(null, newVertex, device, "viewedOn");
+            graph.addEdge(null, device, newVertex, "viewed");
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
 
         return ExtensionResponse.ok(map);
@@ -79,22 +86,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(map);
     }
 
-    private Vertex getUser() {
-        // TODO: Implement getUser()
-        return null;
-    }
-
-    private Vertex getUser(Object userGuid) {
-        // TODO: Implement getUser(userGuid)
-        return null;
-    }
-
-    private Vertex createDevice(Vertex user) {
-        // TODO: Implement createDeveice(user)
-        return null;
-    }
-
-    private boolean createEdge(Graph graph, Vertex v1, int v2id, String message1, String message2) {
+    private boolean createEdge(Graph graph, Vertex v1, String v2id, String message1, String message2) {
         Vertex v2 = graph.getVertex(v2id);
         if (v2 != null) {
             graph.addEdge(null, v1, v2, message1);
