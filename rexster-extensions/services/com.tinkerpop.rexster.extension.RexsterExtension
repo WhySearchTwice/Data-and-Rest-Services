@@ -1,1 +1,4 @@
-com.whysearchtwice.extensions.PageViewExtension
+com.whysearchtwice.rexster.extension.PageViewExtension
+com.whysearchtwice.rexster.extension.UserExtension
+com.whysearchtwice.rexster.extension.DeviceExtension
+com.whysearchtwice.rexster.extension.SearchExtension
