@@ -53,17 +53,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
         // Link to the device the pageView came from
         try {
-            Vertex device = (attributes.has("deviceGuid")) ? graph.getVertex(attributes.get("deviceGuid")) : graph.addVertex(null);
-            Vertex user = (attributes.has("userGuid")) ? graph.getVertex(attributes.get("userGuid")) : graph.addVertex(null);
-
-            if (!attributes.has("deviceGuid")) {
-                // Link the device to the user if it did not already exist
-                graph.addEdge(null, user, device, "owns");
-                graph.addEdge(null, device, user, "ownedBy");
-            }
-
-            map.put("userGuid", user.getId().toString());
-            map.put("deviceGuid", device.getId().toString());
+            Vertex device = getDeviceVertex(graph, attributes, map);
 
             graph.addEdge(null, newVertex, device, "viewedOn");
             graph.addEdge(null, device, newVertex, "viewed");
@@ -134,6 +124,31 @@ public class PageViewExtension extends AbstractParsleyExtension {
                 e1.printStackTrace();
             }
         }
+    }
+
+    private Vertex getDeviceVertex(Graph graph, JSONObject attributes, Map<String, String> httpReturnObject) throws JSONException {
+        if (attributes.has("deviceGuid")) {
+            return graph.getVertex(attributes.get("deviceGuid"));
+        }
+
+        // Create a new Device
+        Vertex device = graph.addVertex(null);
+        httpReturnObject.put("deviceGuid", device.getId().toString());
+
+        Vertex user;
+        if (attributes.has("userGuid")) {
+            user = graph.getVertex(attributes.get("userGuid"));
+        } else {
+            // Create a new User
+            user = graph.addVertex(null);
+            httpReturnObject.put("userGuid", user.getId().toString());
+        }
+
+        // Connect new device to user
+        graph.addEdge(null, user, device, "owns");
+        graph.addEdge(null, device, user, "ownedBy");
+
+        return device;
     }
 
     private String extractDomain(String pageUrl) throws URISyntaxException {
