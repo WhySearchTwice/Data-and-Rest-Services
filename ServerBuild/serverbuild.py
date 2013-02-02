@@ -47,6 +47,11 @@ def install():
     executeCommand('sudo rm rexster.xml')
     executeCommand('sudo wget %s/rexster.xml' % BASE_URL)
 
+    # Retrieve the rexter extension jar
+    logging.debug('Installing Rexster extensions file')
+    os.chdir('%s/%s/ext' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
+    executeCommand('sudo wget %s/rexster-extensions-1.0-SNAPSHOT.jar' % BASE_URL)
+
     # Create rexster symlink
     executeCommand(
         'sudo ln -s %s/%s/bin/rexster.sh /usr/bin/rexster' % (INSTALLATION_DIR, FILES_TO_DOWNLOAD[1]['unzipped']))
