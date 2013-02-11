@@ -44,9 +44,35 @@
     </dependency>
 
     <dependency>
+      <groupId>com.tinkerpop.gremlin</groupId>
+      <artifactId>gremlin-java</artifactId>
+      <version>2.2.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.tinkerpop.gremlin</groupId>
+      <artifactId>gremlin-groovy</artifactId>
+      <version>2.2.0</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.codehaus.jettison</groupId>
       <artifactId>jettison</artifactId>
       <version>1.2</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>
