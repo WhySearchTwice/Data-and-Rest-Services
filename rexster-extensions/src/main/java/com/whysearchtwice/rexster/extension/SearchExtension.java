@@ -26,7 +26,7 @@ public class SearchExtension extends AbstractParsleyExtension {
 
 	@ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, method = HttpMethod.GET)
 	@ExtensionDescriptor(description = "Get the results of a search")
-	public ExtensionResponse updateVertex(
+	public ExtensionResponse searchVertices(
 			@RexsterContext RexsterResourceContext context,
 			@RexsterContext Graph graph,
 			@ExtensionRequestParameter(name = "userGuid", defaultValue = "", description = "The user to retrieve information for") String userGuid,
@@ -47,12 +47,16 @@ public class SearchExtension extends AbstractParsleyExtension {
 		timeRange = adjustTimeRange(timeRange, units);
 		
 		Vertex user = graph.getVertex(userGuid);
+		if(user == null) {
+		    return ExtensionResponse.error("Invalid userGuid");
+		}
 		
 		// Perform search
-		Pipe pipe = Gremlin.compile("_().outE('owns').id");
+		Pipe pipe = Gremlin.compile("_().out('owns').id");
 		pipe.setStarts(new SingleIterator<Vertex>(user));
 		for(Object id : pipe) {
-			System.out.println((String) id);
+			System.out.println("Class: " + id.getClass());
+			System.out.println("Object: " + id.toString());
 		}
 
 		// Map to store the results

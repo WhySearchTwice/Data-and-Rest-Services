@@ -49,6 +49,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
             }
         } catch (JSONException e) {
             e.printStackTrace();
+            return ExtensionResponse.error("Unable to create edge between vertex and parent or predecessor");
         }
 
         // Link to the device the pageView came from
@@ -80,6 +81,10 @@ public class PageViewExtension extends AbstractParsleyExtension {
     @ExtensionDefinition(extensionPoint = ExtensionPoint.VERTEX, method = HttpMethod.POST)
     @ExtensionDescriptor(description = "update an existing vertex in the graph")
     public ExtensionResponse updateVertex(@RexsterContext RexsterResourceContext context, @RexsterContext Vertex vertex) {
+        if(vertex == null) {
+            return ExtensionResponse.error("Invalid vertex, can not update");
+        }
+        
         updateVertexProperties(vertex, context.getRequestObject());
 
         // Map to store the results
