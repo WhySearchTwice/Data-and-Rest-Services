@@ -19,6 +19,7 @@ import com.tinkerpop.rexster.extension.ExtensionPoint;
 import com.tinkerpop.rexster.extension.ExtensionResponse;
 import com.tinkerpop.rexster.extension.HttpMethod;
 import com.tinkerpop.rexster.extension.RexsterContext;
+import com.whysearchtwice.container.PageView;
 
 @ExtensionNaming(name = PageViewExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class PageViewExtension extends AbstractParsleyExtension {
@@ -31,7 +32,12 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
         // Create the new Vertex
         Vertex newVertex = graph.addVertex(null);
-        updateVertexProperties(newVertex, attributes);
+
+        try {
+            updateVertexProperties(newVertex, attributes);
+        } catch (JSONException e) {
+            return ExtensionResponse.error("Unable to set properties on new vertex");
+        }
 
         // Return the id of the new Vertex
         Map<String, String> map = new HashMap<String, String>();
@@ -48,7 +54,6 @@ public class PageViewExtension extends AbstractParsleyExtension {
                 map.put("parent", (result) ? "parent created successfully" : "parent could not be created");
             }
         } catch (JSONException e) {
-            e.printStackTrace();
             return ExtensionResponse.error("Unable to create edge between vertex and parent or predecessor");
         }
 
@@ -59,7 +64,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
             graph.addEdge(null, newVertex, device, "viewedOn");
             graph.addEdge(null, device, newVertex, "viewed");
         } catch (JSONException e) {
-            e.printStackTrace();
+            
         }
 
         // Link to the domain of the page URL
@@ -70,9 +75,9 @@ public class PageViewExtension extends AbstractParsleyExtension {
                 graph.addEdge(null, domainVertex, newVertex, "over");
             }
         } catch (URISyntaxException e) {
-            e.printStackTrace();
+            return ExtensionResponse.error("URI Syntax Exception");
         } catch (JSONException e) {
-            e.printStackTrace();
+            return ExtensionResponse.error("JSON Exception");
         }
 
         return ExtensionResponse.ok(map);
@@ -81,11 +86,15 @@ public class PageViewExtension extends AbstractParsleyExtension {
     @ExtensionDefinition(extensionPoint = ExtensionPoint.VERTEX, method = HttpMethod.POST)
     @ExtensionDescriptor(description = "update an existing vertex in the graph")
     public ExtensionResponse updateVertex(@RexsterContext RexsterResourceContext context, @RexsterContext Vertex vertex) {
-        if(vertex == null) {
+        if (vertex == null) {
             return ExtensionResponse.error("Invalid vertex, can not update");
         }
-        
-        updateVertexProperties(vertex, context.getRequestObject());
+
+        try {
+            updateVertexProperties(vertex, context.getRequestObject());
+        } catch (JSONException e) {
+            return ExtensionResponse.error("Cannot merge properties into existing vertex");
+        }
 
         // Map to store the results
         Map<String, String> map = new HashMap<String, String>();
@@ -105,30 +114,9 @@ public class PageViewExtension extends AbstractParsleyExtension {
         }
     }
 
-    private void updateVertexProperties(Vertex v, JSONObject attributes) {
-        Iterator keysIter = attributes.keys();
-
-        // For any property that exists in the map, update it
-        while (keysIter.hasNext()) {
-            try {
-                String key = (String) keysIter.next();
-
-                if (key.equals("type") || key.equals("pageUrl") || key.equals("userId") || key.equals("deviceId")) {
-                    String value = (String) attributes.get(key);
-                    v.setProperty(key, value);
-                } else if (key.equals("pageOpenTime") || key.equals("pageCloseTime")) {
-                    Long value = (Long) attributes.get(key);
-                    v.setProperty(key, value);
-                } else if (key.equals("tabId") || key.equals("windowId")) {
-                    int value = (Integer) attributes.get(key);
-                    v.setProperty(key, value);
-                } else {
-                    // Ignore the property for now
-                }
-            } catch (JSONException e1) {
-                e1.printStackTrace();
-            }
-        }
+    private void updateVertexProperties(Vertex v, JSONObject attributes) throws JSONException {
+        PageView newAttributes = new PageView(attributes);
+        newAttributes.mergeIntoVertex(v);
     }
 
     private Vertex getDeviceVertex(Graph graph, JSONObject attributes, Map<String, String> httpReturnObject) throws JSONException {
