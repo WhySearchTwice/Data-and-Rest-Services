@@ -1,6 +1,7 @@
 package com.whysearchtwice.container;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -20,11 +21,19 @@ public class PageView {
     private static final List<String> LONG_KEYS = Arrays.asList("pageOpenTime", "pageCloseTime");
     private static final List<String> INT_KEYS = Arrays.asList("tabId", "windowId");
 
+    public PageView() {
+        stringProperties = new HashMap<String, String>();
+        longProperties = new HashMap<String, Long>();
+        intProperties = new HashMap<String, Integer>();
+    }
+
     public PageView(JSONObject attributes) throws JSONException {
+        this();
         jsonToPageView(attributes);
     }
 
     public PageView(Vertex v) {
+        this();
         vertexToPageView(v);
     }
 
@@ -119,10 +128,10 @@ public class PageView {
     public void setProperty(String key, Object value) {
         storeProperty(key, value);
     }
-    
+
     public String toString() {
         String toReturn = "{";
-        
+
         for (Entry<String, String> e : stringProperties.entrySet()) {
             toReturn += "\"" + e.getKey() + "\": \"" + e.getValue() + "\", ";
         }
@@ -134,9 +143,9 @@ public class PageView {
         for (Entry<String, Integer> e : intProperties.entrySet()) {
             toReturn += "\"" + e.getKey() + "\": \"" + e.getValue() + "\", ";
         }
-        
-        toReturn = toReturn.substring(0, toReturn.length()-2);
-        
+
+        toReturn = toReturn.substring(0, toReturn.length() - 2);
+
         toReturn += "}";
         return toReturn;
     }
