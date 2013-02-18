@@ -67,20 +67,28 @@ public class SearchExtension extends AbstractParsleyExtension {
                 PageView pv = new PageView(v);
 
                 // Add a reference to the parent and successors if edges exist
-                for (Vertex neighbor : v.getVertices(Direction.OUT, "parent")) {
+                for (Vertex neighbor : v.getVertices(Direction.OUT, "childOf")) {
                     pv.setProperty("parent", neighbor.getId());
                 }
-                for (Vertex neighbor : v.getVertices(Direction.OUT, "predecessor")) {
+                for (Vertex neighbor : v.getVertices(Direction.OUT, "successorTo")) {
                     pv.setProperty("predecessor", neighbor.getId());
                 }
 
                 pages.add(pv);
             }
         }
+        
+        // Turn list into JSON to return
+        String listAsJSON = "[";
+        for(PageView pv : pages) {
+            listAsJSON += pv.toString() + ", ";
+        }
+        listAsJSON = listAsJSON.substring(0, listAsJSON.length()-2);
+        listAsJSON += "]";
 
         // Map to store the results
         Map<String, String> map = new HashMap<String, String>();
-        map.put("message", "Done!");
+        map.put("results", listAsJSON);
 
         return ExtensionResponse.ok(map);
     }
