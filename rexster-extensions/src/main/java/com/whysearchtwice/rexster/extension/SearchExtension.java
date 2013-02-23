@@ -68,10 +68,10 @@ public class SearchExtension extends AbstractParsleyExtension {
 
                 // Add a reference to the parent and successors if edges exist
                 for (Vertex neighbor : v.getVertices(Direction.OUT, "childOf")) {
-                    pv.setProperty("parent", neighbor.getId());
+                    pv.setProperty("parentId", neighbor.getId().toString());
                 }
                 for (Vertex neighbor : v.getVertices(Direction.OUT, "successorTo")) {
-                    pv.setProperty("predecessor", neighbor.getId());
+                    pv.setProperty("predecessorId", neighbor.getId().toString());
                 }
 
                 pages.add(pv);
