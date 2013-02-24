@@ -1,6 +1,5 @@
 package com.whysearchtwice.rexster.extension;
 
-import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.rexster.RexsterResourceContext;
