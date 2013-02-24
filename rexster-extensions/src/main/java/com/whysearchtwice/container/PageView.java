@@ -17,7 +17,7 @@ public class PageView {
     private Map<String, Long> longProperties;
     private Map<String, Integer> intProperties;
 
-    private static final List<String> STRING_KEYS = Arrays.asList("type", "pageUrl", "userId", "deviceId", "predecessorId", "parentId");
+    private static final List<String> STRING_KEYS = Arrays.asList("id", "type", "pageUrl", "userId", "deviceId", "predecessorId", "parentId");
     private static final List<String> LONG_KEYS = Arrays.asList("pageOpenTime", "pageCloseTime");
     private static final List<String> INT_KEYS = Arrays.asList("tabId", "windowId");
 
@@ -82,6 +82,8 @@ public class PageView {
      * @param v
      */
     public void vertexToPageView(Vertex v) {
+        storeProperty("id", v.getId().toString());
+        
         for (String key : v.getPropertyKeys()) {
             storeProperty(key, v.getProperty(key));
         }
