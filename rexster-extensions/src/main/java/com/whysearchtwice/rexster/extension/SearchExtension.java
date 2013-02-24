@@ -58,8 +58,15 @@ public class SearchExtension extends AbstractParsleyExtension {
 
         List<PageView> pages = new ArrayList<PageView>();
 
+        // Build the search
+        Pipe pipe;
+        if(!domain.equals("")) {
+            pipe = Gremlin.compile("_().out('owns').out('viewed').out('under').has('domain', T.eq, '" + domain + "').back(2)");
+        } else {
+            pipe = Gremlin.compile("_().out('owns').out('viewed')");
+        }
+        
         // Perform search
-        Pipe pipe = Gremlin.compile("_().out('owns').out('viewed')");
         pipe.setStarts(new SingleIterator<Vertex>(user));
         for (Object result : pipe) {
             if (result instanceof Vertex) {
