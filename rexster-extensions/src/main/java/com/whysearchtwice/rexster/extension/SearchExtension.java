@@ -37,7 +37,9 @@ public class SearchExtension extends AbstractParsleyExtension {
             @ExtensionRequestParameter(name = "domain", defaultValue = "", description = "Retrieve pages with this domain") String domain,
             @ExtensionRequestParameter(name = "openTime", defaultValue = "", description = "The middle of a time based query") String openTime,
             @ExtensionRequestParameter(name = "timeRange", defaultValue = "30", description = "The range of time to search around openTime (openTime +- timeRange/2)") Integer timeRange,
-            @ExtensionRequestParameter(name = "timeRangeUnits", defaultValue = "minutes", description = "hours, minutes, seconds") String units) {
+            @ExtensionRequestParameter(name = "timeRangeUnits", defaultValue = "minutes", description = "hours, minutes, seconds") String units,
+            @ExtensionRequestParameter(name = "includeSuccessors", defaultValue = "false", description = "Whether or not to include all successors to a search result") Boolean successors,
+            @ExtensionRequestParameter(name = "includeChildren", defaultValue = "false", description = "Whether or not to include all children of a search result") Boolean children){
 
         // Catch some errors
         if (openTime.equals("")) {
@@ -71,17 +73,7 @@ public class SearchExtension extends AbstractParsleyExtension {
         for (Object result : pipe) {
             if (result instanceof Vertex) {
                 Vertex v = (Vertex) result;
-                PageView pv = new PageView(v);
-
-                // Add a reference to the parent and successors if edges exist
-                for (Vertex neighbor : v.getVertices(Direction.OUT, "childOf")) {
-                    pv.setProperty("parentId", neighbor.getId().toString());
-                }
-                for (Vertex neighbor : v.getVertices(Direction.OUT, "successorTo")) {
-                    pv.setProperty("predecessorId", neighbor.getId().toString());
-                }
-
-                pages.add(pv);
+                addVertexToList(pages, v, successors, children);
             }
         }
         
@@ -98,6 +90,32 @@ public class SearchExtension extends AbstractParsleyExtension {
         map.put("results", listAsJSON);
 
         return ExtensionResponse.ok(map);
+    }
+    
+    private void addVertexToList(List<PageView> pages, Vertex v, boolean successors, boolean children) {
+        PageView pv = new PageView(v);
+        pages.add(pv);
+
+        // Add a reference to the parent and successors if edges exist
+        for (Vertex neighbor : v.getVertices(Direction.OUT, "childOf")) {
+            pv.setProperty("parentId", neighbor.getId().toString());
+        }
+        for (Vertex neighbor : v.getVertices(Direction.OUT, "successorTo")) {
+            pv.setProperty("predecessorId", neighbor.getId().toString());
+        }
+        
+        // Recursively search if children or successors should be included
+        if(successors) {
+            for(Vertex successor : v.getVertices(Direction.OUT, "predecessorTo")) {
+                addVertexToList(pages, successor, successors, children);
+            }
+        }
+        
+        if(children) {
+            for(Vertex successor : v.getVertices(Direction.OUT, "parentOf")) {
+                addVertexToList(pages, successor, successors, children);
+            }
+        }
     }
 
     private int adjustTimeRange(int timeRange, String units) {
