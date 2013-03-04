@@ -54,8 +54,6 @@ public class SearchExtension extends AbstractParsleyExtension {
 
         // Manipulate parameters
         Long openTimeL = Long.parseLong(openTime);
-        Calendar pageOpenTime = Calendar.getInstance();
-        pageOpenTime.setTimeInMillis(Long.parseLong(openTime));
         timeRange = adjustTimeRange(timeRange, units);
 
         List<PageView> pages = new ArrayList<PageView>();
@@ -136,9 +134,12 @@ public class SearchExtension extends AbstractParsleyExtension {
      * 
      * @param timeRange
      * @param units
-     * @return int timeRange
+     * @return int timeRange Timestamp converted to milliseconds
      */
     private int adjustTimeRange(int timeRange, String units) {
+        // Convert to milliseconds
+        timeRange *= 1000;
+
         if (units.equals("seconds")) {
             return timeRange * 1;
         } else if (units.equals("minutes")) {
