@@ -64,7 +64,9 @@ public class PageView {
 
     public void mergeIntoVertex(Vertex v) {
         for (Entry<String, String> e : stringProperties.entrySet()) {
-            v.setProperty(e.getKey(), e.getValue());
+            if(!e.getKey().equals("id")) {
+                v.setProperty(e.getKey(), e.getValue());
+            }
         }
 
         for (Entry<String, Long> e : longProperties.entrySet()) {
