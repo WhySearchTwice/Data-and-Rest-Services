@@ -17,7 +17,7 @@ public class PageView {
     private Map<String, Long> longProperties;
     private Map<String, Integer> intProperties;
 
-    private static final List<String> STRING_KEYS = Arrays.asList("id", "type", "pageUrl", "userId", "deviceId", "predecessorId", "parentId");
+    private static final List<String> STRING_KEYS = Arrays.asList("id", "type", "pageUrl", "userGuid", "deviceGuid", "predecessorId", "parentId");
     private static final List<String> LONG_KEYS = Arrays.asList("pageOpenTime", "pageCloseTime");
     private static final List<String> INT_KEYS = Arrays.asList("tabId", "windowId");
 

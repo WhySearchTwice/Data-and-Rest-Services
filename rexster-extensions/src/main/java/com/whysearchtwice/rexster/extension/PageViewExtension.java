@@ -46,11 +46,11 @@ public class PageViewExtension extends AbstractParsleyExtension {
         // Create an edge to the Predecessor or Parent if needed
         try {
             if (attributes.has("predecessor")) {
-                boolean result = createEdge(graph, newVertex, attributes.getString("predecessor"), "successorTo", "predecessorTo");
+                boolean result = createEdge(graph, newVertex, attributes.getString("predecessor"), "successorTo");
                 map.put("predecessor", (result) ? "predecessor created successfully" : "predecessor could not be created");
             }
             if (attributes.has("parent")) {
-                boolean result = createEdge(graph, newVertex, attributes.getString("parent"), "childOf", "parentOf");
+                boolean result = createEdge(graph, newVertex, attributes.getString("parent"), "childOf");
                 map.put("parent", (result) ? "parent created successfully" : "parent could not be created");
             }
         } catch (JSONException e) {
@@ -61,10 +61,9 @@ public class PageViewExtension extends AbstractParsleyExtension {
         try {
             Vertex device = getDeviceVertex(graph, attributes, map);
 
-            graph.addEdge(null, newVertex, device, "viewedOn");
             graph.addEdge(null, device, newVertex, "viewed");
         } catch (JSONException e) {
-            
+
         }
 
         // Link to the domain of the page URL
@@ -72,7 +71,6 @@ public class PageViewExtension extends AbstractParsleyExtension {
             if (attributes.has("pageUrl")) {
                 Vertex domainVertex = findOrCreateDomainVertex(graph, extractDomain(attributes.getString("pageUrl")));
                 graph.addEdge(null, newVertex, domainVertex, "under");
-                graph.addEdge(null, domainVertex, newVertex, "over");
             }
         } catch (URISyntaxException e) {
             return ExtensionResponse.error("URI Syntax Exception");
@@ -103,11 +101,10 @@ public class PageViewExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(map);
     }
 
-    private boolean createEdge(Graph graph, Vertex v1, String v2id, String message1, String message2) {
+    private boolean createEdge(Graph graph, Vertex v1, String v2id, String message1) {
         Vertex v2 = graph.getVertex(v2id);
         if (v2 != null) {
             graph.addEdge(null, v1, v2, message1);
-            graph.addEdge(null, v2, v1, message2);
             return true;
         } else {
             return false;
@@ -126,6 +123,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
         // Create a new Device
         Vertex device = graph.addVertex(null);
+        device.setProperty("type", "device");
         httpReturnObject.put("deviceGuid", device.getId().toString());
 
         Vertex user;
@@ -134,20 +132,25 @@ public class PageViewExtension extends AbstractParsleyExtension {
         } else {
             // Create a new User
             user = graph.addVertex(null);
+            user.setProperty("type", "user");
             httpReturnObject.put("userGuid", user.getId().toString());
         }
 
         // Connect new device to user
         graph.addEdge(null, user, device, "owns");
-        graph.addEdge(null, device, user, "ownedBy");
 
         return device;
     }
 
     private String extractDomain(String pageUrl) throws URISyntaxException {
-        URI uri = new URI(pageUrl);
-        String domain = uri.getHost();
-        return domain.startsWith("www.") ? domain.substring(4) : domain;
+        try {
+            URI uri = new URI(pageUrl);
+            String domain = uri.getHost();
+            return domain.startsWith("www.") ? domain.substring(4) : domain;
+        } catch (Exception e) {
+            return "special";
+        }
+
     }
 
     private Vertex findOrCreateDomainVertex(Graph graph, String domain) {
@@ -156,6 +159,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
             return iter.next();
         } else {
             Vertex newVertex = graph.addVertex(null);
+            newVertex.setProperty("type", "domain");
             newVertex.setProperty("domain", domain);
             return newVertex;
         }

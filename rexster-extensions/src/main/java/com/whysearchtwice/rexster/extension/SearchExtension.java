@@ -117,13 +117,13 @@ public class SearchExtension extends AbstractParsleyExtension {
 
         // Recursively search if children or successors should be included
         if (successors) {
-            for (Vertex successor : v.getVertices(Direction.OUT, "predecessorTo")) {
+            for (Vertex successor : v.getVertices(Direction.IN, "successorTo")) {
                 addVertexToList(pages, successor, successors, children);
             }
         }
 
         if (children) {
-            for (Vertex successor : v.getVertices(Direction.OUT, "parentOf")) {
+            for (Vertex successor : v.getVertices(Direction.IN, "childOf")) {
                 addVertexToList(pages, successor, successors, children);
             }
         }
