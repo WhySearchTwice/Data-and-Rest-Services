@@ -29,6 +29,8 @@ public class PageViewExtension extends AbstractParsleyExtension {
     @ExtensionDescriptor(description = "create a new vertex in the graph")
     public ExtensionResponse createNewVertex(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
         JSONObject attributes = context.getRequestObject();
+        System.out.println("--- A NEW REQUEST ---");
+        System.out.println(attributes.toString());
 
         // Create the new Vertex
         Vertex newVertex = graph.addVertex(null);
@@ -60,7 +62,6 @@ public class PageViewExtension extends AbstractParsleyExtension {
         // Link to the device the pageView came from
         try {
             Vertex device = getDeviceVertex(graph, attributes, map);
-
             graph.addEdge(null, device, newVertex, "viewed");
         } catch (JSONException e) {
 
@@ -118,7 +119,10 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
     private Vertex getDeviceVertex(Graph graph, JSONObject attributes, Map<String, String> httpReturnObject) throws JSONException {
         if (attributes.has("deviceGuid")) {
-            return graph.getVertex(attributes.get("deviceGuid"));
+            Vertex device = graph.getVertex(attributes.get("deviceGuid"));
+            if (device != null) {
+                return device;
+            }
         }
 
         // Create a new Device
