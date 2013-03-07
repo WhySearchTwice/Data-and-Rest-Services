@@ -130,10 +130,11 @@ public class PageViewExtension extends AbstractParsleyExtension {
         device.setProperty("type", "device");
         httpReturnObject.put("deviceGuid", device.getId().toString());
 
-        Vertex user;
+        Vertex user = null;
         if (attributes.has("userGuid")) {
             user = graph.getVertex(attributes.get("userGuid"));
-        } else {
+        }
+        if (user == null) {
             // Create a new User
             user = graph.addVertex(null);
             user.setProperty("type", "user");
