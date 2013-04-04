@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.commons.io.FileUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -27,6 +28,8 @@ public class App {
         try {
             JSONObject json = loadAndTransformJson(args[0]);
             Graph graph = createTinkerGraph(json);
+
+            writeJsonToFile("output.json", json);
             writeGraphToFile(args[1], graph);
         } catch (Exception e) {
             e.printStackTrace();
@@ -91,6 +94,10 @@ public class App {
         GraphSONReader.inputGraph(graph, in);
 
         return graph;
+    }
+
+    private static void writeJsonToFile(String outputFileName, JSONObject json) throws Exception {
+        FileUtils.writeStringToFile(new File(outputFileName), json.toString(4));
     }
 
     private static void writeGraphToFile(String outputFileName, Graph graph) throws Exception {
