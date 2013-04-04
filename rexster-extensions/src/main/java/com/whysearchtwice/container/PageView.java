@@ -1,6 +1,7 @@
 package com.whysearchtwice.container;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -17,9 +18,10 @@ public class PageView {
     private Map<String, Long> longProperties;
     private Map<String, Integer> intProperties;
 
-    private static final List<String> STRING_KEYS = Arrays.asList("id", "type", "pageUrl", "userGuid", "deviceGuid", "predecessorId", "parentId", "username", "clientVersion");
-    private static final List<String> LONG_KEYS = Arrays.asList("pageOpenTime", "pageCloseTime");
-    private static final List<String> INT_KEYS = Arrays.asList("tabId", "windowId");
+    private static final List<String> STRING_KEYS = Collections.unmodifiableList(Arrays.asList("id", "type", "pageUrl", "userGuid", "deviceGuid", "predecessorId", "parentId",
+            "username", "clientVersion"));
+    private static final List<String> LONG_KEYS = Collections.unmodifiableList(Arrays.asList("pageOpenTime", "pageCloseTime"));
+    private static final List<String> INT_KEYS = Collections.unmodifiableList(Arrays.asList("tabId", "windowId"));
 
     public PageView() {
         stringProperties = new HashMap<String, String>();
@@ -64,7 +66,7 @@ public class PageView {
 
     public void mergeIntoVertex(Vertex v) {
         for (Entry<String, String> e : stringProperties.entrySet()) {
-            if(!e.getKey().equals("id")) {
+            if (!e.getKey().equals("id")) {
                 v.setProperty(e.getKey(), e.getValue());
             }
         }
@@ -85,7 +87,7 @@ public class PageView {
      */
     public void vertexToPageView(Vertex v) {
         storeProperty("id", v.getId().toString());
-        
+
         for (String key : v.getPropertyKeys()) {
             storeProperty(key, v.getProperty(key));
         }
