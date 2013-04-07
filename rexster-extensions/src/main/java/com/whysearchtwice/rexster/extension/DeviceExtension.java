@@ -30,55 +30,51 @@ public class DeviceExtension extends AbstractParsleyExtension {
 
         try {
             if (attributes.has("deviceName")) {
-                updateDeviceName(graph, attributes.getString("deviceGuid"), attributes.getString("deviceName"));
+                return updateDeviceName(graph, attributes.getString("deviceGuid"), attributes.getString("deviceName"));
+            } else if (attributes.has("newUserGuid")) {
+                return updateDeviceOwner(graph, attributes.getString("deviceGuid"), attributes.getString("newUserGuid"));
+            } else {
+                return ExtensionResponse.error("Missing required field. See documentation for expected properties");
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            return ExtensionResponse.error("Missing required field. See documentation for expected properties");
         }
-
-        // Map to store the results
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("message", "vertex updated");
-
-        return ExtensionResponse.ok(map);
     }
 
-    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, method = HttpMethod.POST)
-    @ExtensionDescriptor(description = "move a device to a different user")
-    public ExtensionResponse switchDeviceUser(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
-        JSONObject attributes = context.getRequestObject();
-
-        try {
-            String userGuid = attributes.getString("userGuid");
-            Vertex newUser = graph.getVertex(userGuid);
-            if (newUser != null) {
-                return ExtensionResponse.error("Invalid userGuid");
-            }
-
-            String deviceGuid = attributes.getString("deviceGuid");
-            Vertex device = graph.getVertex(deviceGuid);
-            if (device == null) {
-                return ExtensionResponse.error("Invalid deviceGuid");
-            }
-
-            // Delete the old edge
-            for (Edge e : device.getEdges(Direction.IN, "owns")) {
-                graph.removeEdge(e);
-            }
-
-            // Create the new
-            graph.addEdge(null, newUser, device, "owns");
-        } catch (JSONException e) {
-            return ExtensionResponse.error("Missing userGuid or deviceGuid");
+    private ExtensionResponse updateDeviceOwner(Graph graph, String deviceGuid, String newUserGuid) {
+        Vertex newUser = graph.getVertex(newUserGuid);
+        if (newUser != null) {
+            return ExtensionResponse.error("Invalid userGuid");
         }
+
+        Vertex device = graph.getVertex(deviceGuid);
+        if (device == null) {
+            return ExtensionResponse.error("Invalid deviceGuid");
+        }
+
+        // Delete the old edge
+        for (Edge e : device.getEdges(Direction.IN, "owns")) {
+            graph.removeEdge(e);
+        }
+
+        // Create the new
+        graph.addEdge(null, newUser, device, "owns");
 
         Map<String, String> map = new HashMap<String, String>();
         map.put("message", "device owner updated");
         return ExtensionResponse.ok(map);
     }
 
-    private void updateDeviceName(Graph graph, String deviceGuid, String deviceName) {
+    private ExtensionResponse updateDeviceName(Graph graph, String deviceGuid, String deviceName) {
         Vertex user = graph.getVertex(deviceGuid);
-        user.setProperty("deviceName", deviceName);
+        if (user != null) {
+            user.setProperty("deviceName", deviceName);
+        } else {
+            return ExtensionResponse.error("Invalid deviceGuid");
+        }
+
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("message", "device name updated");
+        return ExtensionResponse.ok(map);
     }
 }
