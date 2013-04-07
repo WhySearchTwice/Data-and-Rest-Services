@@ -6,6 +6,8 @@ import java.util.Map;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.rexster.RexsterResourceContext;
@@ -25,7 +27,7 @@ public class DeviceExtension extends AbstractParsleyExtension {
     @ExtensionDescriptor(description = "update a username or attach a device")
     public ExtensionResponse updateDevice(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
         JSONObject attributes = context.getRequestObject();
-        
+
         try {
             if (attributes.has("deviceName")) {
                 updateDeviceName(graph, attributes.getString("deviceGuid"), attributes.getString("deviceName"));
@@ -33,15 +35,49 @@ public class DeviceExtension extends AbstractParsleyExtension {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        
+
         // Map to store the results
         Map<String, String> map = new HashMap<String, String>();
         map.put("message", "vertex updated");
 
         return ExtensionResponse.ok(map);
     }
-    
-    public void updateDeviceName(Graph graph, String deviceGuid, String deviceName) {
+
+    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, method = HttpMethod.POST)
+    @ExtensionDescriptor(description = "move a device to a different user")
+    public ExtensionResponse switchDeviceUser(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
+        JSONObject attributes = context.getRequestObject();
+
+        try {
+            String userGuid = attributes.getString("userGuid");
+            Vertex newUser = graph.getVertex(userGuid);
+            if (newUser != null) {
+                return ExtensionResponse.error("Invalid userGuid");
+            }
+
+            String deviceGuid = attributes.getString("deviceGuid");
+            Vertex device = graph.getVertex(deviceGuid);
+            if (device == null) {
+                return ExtensionResponse.error("Invalid deviceGuid");
+            }
+
+            // Delete the old edge
+            for (Edge e : device.getEdges(Direction.IN, "owns")) {
+                graph.removeEdge(e);
+            }
+
+            // Create the new
+            graph.addEdge(null, newUser, device, "owns");
+        } catch (JSONException e) {
+            return ExtensionResponse.error("Missing userGuid or deviceGuid");
+        }
+
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("message", "device owner updated");
+        return ExtensionResponse.ok(map);
+    }
+
+    private void updateDeviceName(Graph graph, String deviceGuid, String deviceName) {
         Vertex user = graph.getVertex(deviceGuid);
         user.setProperty("deviceName", deviceName);
     }
