@@ -25,13 +25,25 @@ public class CleanupExtension extends AbstractParsleyExtension {
     @ExtensionDefinition(extensionPoint = ExtensionPoint.VERTEX, path = "openTabs", method = HttpMethod.GET)
     @ExtensionDescriptor(description = "update a username or attach a device")
     public ExtensionResponse updateDevice(@RexsterContext Vertex vertex) {
-        if (vertex == null || !vertex.getProperty("type").equals("user")) {
-            return ExtensionResponse.error("Vertex is not a user");
+        if (vertex == null) {
+            return ExtensionResponse.error("Invalid vertex");
         }
 
+        String gremlinQuery = null;
+        String type = (String) vertex.getProperty("type");
         List<PageView> results = new ArrayList<PageView>();
 
-        Pipe pipe = Gremlin.compile("_().out('owns').out('viewed').has('pageCloseTime', null)");
+        // The search may be starting from a user or a device. Adjust the query
+        // accordingly.
+
+        if (type.equals("user")) {
+            gremlinQuery = "_().out('owns').out('viewed').has('pageCloseTime', null)";
+        } else if (type.equals("device")) {
+            gremlinQuery = "_().out('viewed').has('pageCloseTime', null)";
+        } else {
+            return ExtensionResponse.error("Vertex is not a user or device");
+        }
+        Pipe pipe = Gremlin.compile(gremlinQuery);
         pipe.setStarts(new SingleIterator<Vertex>(vertex));
         for (Object result : pipe) {
             if (result instanceof Vertex) {
