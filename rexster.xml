@@ -65,7 +65,7 @@
             <graph-location></graph-location>
             <graph-read-only>false</graph-read-only>
             <properties>
-                <storage.backend>cassandra</storage.backend>
+                <storage.backend>hbase</storage.backend>
                 <storage.hostname>localhost</storage.hostname>
             </properties>
             <extensions>
