@@ -1,10 +1,7 @@
 package com.whysearchtwice.rexster.extension;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Graph;
@@ -56,7 +53,7 @@ public class SearchExtension extends AbstractParsleyExtension {
         Long openTimeL = Long.parseLong(openTime);
         timeRange = adjustTimeRange(timeRange, units);
 
-        List<PageView> pages = new ArrayList<PageView>();
+        JSONObject results = new JSONObject();
 
         // Build the search
         String gremlinQuery = "_().out('owns').out('viewed')";
@@ -67,31 +64,20 @@ public class SearchExtension extends AbstractParsleyExtension {
         }
 
         // Perform search
-        Pipe pipe = Gremlin.compile(gremlinQuery);
-        pipe.setStarts(new SingleIterator<Vertex>(user));
-        for (Object result : pipe) {
-            if (result instanceof Vertex) {
-                Vertex v = (Vertex) result;
-                addVertexToList(pages, v, successors, children);
+        try {
+            Pipe pipe = Gremlin.compile(gremlinQuery);
+            pipe.setStarts(new SingleIterator<Vertex>(user));
+            for (Object result : pipe) {
+                if (result instanceof Vertex) {
+                    Vertex v = (Vertex) result;
+                    addVertexToList(results, v, successors, children);
+                }
             }
+        } catch (JSONException e) {
+            return ExtensionResponse.error("Failed to create search results");
         }
 
-        // Turn list into JSON to return
-        String listAsJSON = "[]";
-        if (pages.size() > 0) {
-            listAsJSON = "[";
-            for (PageView pv : pages) {
-                listAsJSON += pv.toString() + ", ";
-            }
-            listAsJSON = listAsJSON.substring(0, listAsJSON.length() - 2);
-            listAsJSON += "]";
-        }
-
-        // Map to store the results
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("results", listAsJSON);
-
-        return ExtensionResponse.ok(map);
+        return ExtensionResponse.ok(results);
     }
 
     /**
@@ -102,10 +88,12 @@ public class SearchExtension extends AbstractParsleyExtension {
      * @param v
      * @param successors
      * @param children
+     * @throws JSONException
      */
-    private void addVertexToList(List<PageView> pages, Vertex v, boolean successors, boolean children) {
+    private void addVertexToList(JSONObject results, Vertex v, boolean successors, boolean children) throws JSONException {
+        // Add this vertex to the results list
         PageView pv = new PageView(v);
-        pages.add(pv);
+        results.accumulate("results", pv.exportJson());
 
         // Add a reference to the parent and successors if edges exist
         for (Vertex neighbor : v.getVertices(Direction.OUT, "childOf")) {
@@ -118,13 +106,13 @@ public class SearchExtension extends AbstractParsleyExtension {
         // Recursively search if children or successors should be included
         if (successors) {
             for (Vertex successor : v.getVertices(Direction.IN, "successorTo")) {
-                addVertexToList(pages, successor, successors, children);
+                addVertexToList(results, successor, successors, children);
             }
         }
 
         if (children) {
             for (Vertex successor : v.getVertices(Direction.IN, "childOf")) {
-                addVertexToList(pages, successor, successors, children);
+                addVertexToList(results, successor, successors, children);
             }
         }
     }

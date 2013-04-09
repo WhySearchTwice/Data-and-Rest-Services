@@ -1,9 +1,7 @@
 package com.whysearchtwice.rexster.extension;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.gremlin.groovy.Gremlin;
@@ -31,7 +29,7 @@ public class CleanupExtension extends AbstractParsleyExtension {
 
         String gremlinQuery = null;
         String type = (String) vertex.getProperty("type");
-        List<PageView> results = new ArrayList<PageView>();
+        JSONObject results = new JSONObject();
 
         // The search may be starting from a user or a device. Adjust the query
         // accordingly.
@@ -47,25 +45,14 @@ public class CleanupExtension extends AbstractParsleyExtension {
         pipe.setStarts(new SingleIterator<Vertex>(vertex));
         for (Object result : pipe) {
             if (result instanceof Vertex) {
-                results.add(new PageView((Vertex) result));
+                try {
+                    results.accumulate("results", new PageView((Vertex) result).exportJson());
+                } catch (JSONException e) {
+                    return ExtensionResponse.error("Failed to create JSON Result");
+                }
             }
         }
 
-        // Turn list into JSON to return
-        String listAsJSON = "[]";
-        if (results.size() > 0) {
-            listAsJSON = "[";
-            for (PageView pv : results) {
-                listAsJSON += pv.toString() + ", ";
-            }
-            listAsJSON = listAsJSON.substring(0, listAsJSON.length() - 2);
-            listAsJSON += "]";
-        }
-
-        // Map to store the results
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("results", listAsJSON);
-
-        return ExtensionResponse.ok(map);
+        return ExtensionResponse.ok(results);
     }
 }

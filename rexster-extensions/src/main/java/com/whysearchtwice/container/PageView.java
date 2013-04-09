@@ -50,15 +50,15 @@ public class PageView {
         JSONObject json = new JSONObject();
 
         for (Entry<String, String> e : stringProperties.entrySet()) {
-            json.append(e.getKey(), e.getValue());
+            json.put(e.getKey(), e.getValue());
         }
 
         for (Entry<String, Long> e : longProperties.entrySet()) {
-            json.append(e.getKey(), e.getValue());
+            json.put(e.getKey(), e.getValue());
         }
 
         for (Entry<String, Integer> e : intProperties.entrySet()) {
-            json.append(e.getKey(), e.getValue());
+            json.put(e.getKey(), e.getValue());
         }
 
         return json;
