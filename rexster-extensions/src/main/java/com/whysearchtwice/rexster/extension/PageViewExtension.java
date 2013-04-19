@@ -123,73 +123,78 @@ public class PageViewExtension extends AbstractParsleyExtension {
     private Vertex getDeviceVertex(Graph graph, JSONObject attributes, Map<String, String> httpReturnObject) throws JSONException {
         if (attributes.has("deviceGuid")) {
             Vertex device = graph.getVertex(attributes.get("deviceGuid"));
-            if (device != null) {
+            if (device != null && device.getProperty("type").equals("device")) {
                 return device;
             } else {
-                // This is probably a Guid left over from a previous version of the graph
+                // This is probably a Guid left over from a previous version of
+                // the graph
                 // Check if there is an "oldDeviceGuid" on any device nodes
-                for(Vertex v : graph.getVertices("type", "device")) {
+                for (Vertex v : graph.getVertices("type", "device")) {
                     String oldDeviceGuid = (String) v.getProperty("oldDeviceGuid");
-                    if(oldDeviceGuid != null && oldDeviceGuid.equals(attributes.get("deviceGuid"))) {
+                    if (oldDeviceGuid != null && oldDeviceGuid.equals(attributes.get("deviceGuid"))) {
                         return device;
                     }
                 }
-                
-                // If we still can't find anything, then create a new device and set the oldDeviceGuid
+
+                // If we still can't find anything, then create a new device and
+                // set the oldDeviceGuid
             }
         }
 
         // Create a new Device
         Vertex device = createDevice(graph, httpReturnObject);
-        
-        // If there was a deviceGuid that didn't lead to finding a device, set it on this vertex
-        if(attributes.has("deviceGuid")) {
+
+        // If there was a deviceGuid that didn't lead to finding a device, set
+        // it on this vertex
+        if (attributes.has("deviceGuid")) {
             device.setProperty("oldDeviceGuid", attributes.get("deviceGuid"));
         }
 
         Vertex user = null;
         if (attributes.has("userGuid")) {
             user = graph.getVertex(attributes.get("userGuid"));
-            if(user == null) {
-                // This is probably a Guid left over from a previous version of the graph
-                
+            if (user == null) {
+                // This is probably a Guid left over from a previous version of
+                // the graph
+
                 // Check if there is an "oldUserGuid" on any user nodes
-                for(Vertex v : graph.getVertices("type", "user")) {
+                for (Vertex v : graph.getVertices("type", "user")) {
                     String oldUserGuid = (String) v.getProperty("oldUserGuid");
-                    if(oldUserGuid != null && oldUserGuid.equals(attributes.get("userGuid"))) {
+                    if (oldUserGuid != null && oldUserGuid.equals(attributes.get("userGuid"))) {
                         user = v;
                         break;
                     }
                 }
-                
-                // If we still can't find anything, then create a new user and set the oldUserGuid
+
+                // If we still can't find anything, then create a new user and
+                // set the oldUserGuid
                 user = createUser(graph, httpReturnObject);
                 user.setProperty("oldUserGuid", attributes.get("userGuid"));
             }
         }
-        
+
         // Create a new user if it doesn't exist yet
-        user = (user == null) ? createUser(graph, httpReturnObject) : user;
+        user = (user == null && user.getProperty("type").equals("user")) ? createUser(graph, httpReturnObject) : user;
 
         // Connect new device to user
         graph.addEdge(null, user, device, "owns");
 
         return device;
     }
-    
+
     private Vertex createUser(Graph graph, Map<String, String> httpReturnObject) {
         Vertex user = graph.addVertex(null);
         user.setProperty("type", "user");
         httpReturnObject.put("userGuid", user.getId().toString());
-        
+
         return user;
     }
-    
+
     private Vertex createDevice(Graph graph, Map<String, String> httpReturnObject) {
         Vertex device = graph.addVertex(null);
         device.setProperty("type", "device");
         httpReturnObject.put("deviceGuid", device.getId().toString());
-        
+
         return device;
     }
 
