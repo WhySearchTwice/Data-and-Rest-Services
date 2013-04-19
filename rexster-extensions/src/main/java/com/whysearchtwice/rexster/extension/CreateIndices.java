@@ -1,0 +1,45 @@
+package com.whysearchtwice.rexster.extension;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.thinkaurelius.titan.core.TitanGraph;
+import com.thinkaurelius.titan.core.TitanKey;
+import com.thinkaurelius.titan.core.TitanLabel;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.rexster.RexsterResourceContext;
+import com.tinkerpop.rexster.extension.ExtensionDefinition;
+import com.tinkerpop.rexster.extension.ExtensionDescriptor;
+import com.tinkerpop.rexster.extension.ExtensionNaming;
+import com.tinkerpop.rexster.extension.ExtensionPoint;
+import com.tinkerpop.rexster.extension.ExtensionResponse;
+import com.tinkerpop.rexster.extension.HttpMethod;
+import com.tinkerpop.rexster.extension.RexsterContext;
+
+@ExtensionNaming(name = CreateIndices.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
+public class CreateIndices extends AbstractParsleyExtension {
+    public static final String NAME = "setup";
+
+    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, method = HttpMethod.POST)
+    @ExtensionDescriptor(description = "create the required indices on the graph")
+    public ExtensionResponse createIndices(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
+        if (graph instanceof TitanGraph) {
+            TitanGraph tg = (TitanGraph) graph;
+
+            System.out.println("Creating Vertex Indices");
+            TitanKey username = tg.makeType().name("username").indexed().dataType(String.class).makePropertyKey();
+            TitanKey domain = tg.makeType().name("domain").indexed().dataType(String.class).makePropertyKey();
+            TitanKey pageOpenTime = tg.makeType().name("pageOpenTime").dataType(Long.class).indexed().unique().functional().makePropertyKey();
+
+            System.out.println("Creating Edge Indices");
+            TitanLabel pageViewEdge = tg.makeType().name("viewed").primaryKey(pageOpenTime).makeEdgeLabel();
+
+            Map<String, String> result = new HashMap<String, String>();
+            result.put("message", "Indices created");
+            return ExtensionResponse.ok(result);
+        } else {
+            return ExtensionResponse.error("Invalid graph format");
+        }
+    }
+}

@@ -3,3 +3,4 @@ com.whysearchtwice.rexster.extension.UserExtension
 com.whysearchtwice.rexster.extension.DeviceExtension
 com.whysearchtwice.rexster.extension.SearchExtension
 com.whysearchtwice.rexster.extension.CleanupExtension
+com.whysearchtwice.rexster.extension.CreateIndices
