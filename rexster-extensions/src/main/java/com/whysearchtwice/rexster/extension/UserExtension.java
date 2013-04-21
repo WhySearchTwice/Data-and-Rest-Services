@@ -89,11 +89,11 @@ public class UserExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(map);
     }
 
-    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "renewDevice", method = HttpMethod.GET)
+    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "renew", method = HttpMethod.GET)
     @ExtensionDescriptor(description = "get a new user or device or look up existing")
-    public ExtensionResponse getNewUser(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph,
-            @ExtensionRequestParameter(name = "userGuid", defaultValue = "", description = "An old userGuid that is no longer valid") String oldUserGuid,
-            @ExtensionRequestParameter(name = "deviceGuid", defaultValue = "", description = "An old deviceGuid that is no longer valid") String oldDeviceGuid) {
+    public ExtensionResponse renewUserOrDevice(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph,
+            @ExtensionRequestParameter(name = "userGuid", defaultValue = "", description = "A userGuid may or may not be valid") String oldUserGuid,
+            @ExtensionRequestParameter(name = "deviceGuid", defaultValue = "", description = "An optional deviceGuid that may or may not be valid") String oldDeviceGuid) {
 
         // Map to store the results
         Map<String, String> map = new HashMap<String, String>();
@@ -118,18 +118,8 @@ public class UserExtension extends AbstractParsleyExtension {
         // Check to see if there is an existing device
         Vertex device = graph.getVertex(oldDeviceGuid);
         if (device == null || !device.getProperty("type").equals("device")) {
-            // Check if there is an "oldDeviceGuid" on any device nodes
-            for (Vertex v : graph.getVertices("type", "device")) {
-                String foundDeviceGuid = (String) v.getProperty("oldDeviceGuid");
-                if (foundDeviceGuid != null && foundDeviceGuid.equals(oldDeviceGuid)) {
-                    device = v;
-                }
-            }
-
-            // If we still didn't find anything, create a new user
-            if (device == null || !device.getProperty("type").equals("device")) {
-                device = (oldDeviceGuid.length() > 0) ? createDevice(graph, user, oldDeviceGuid) : createDevice(graph, user);
-            }
+            // If not, create a new device
+            device = createDevice(graph, user);
         }
 
         map.put("userGuid", user.getId().toString());
@@ -164,12 +154,6 @@ public class UserExtension extends AbstractParsleyExtension {
         // Connect new device to user
         graph.addEdge(null, user, device, "owns");
 
-        return device;
-    }
-
-    private Vertex createDevice(Graph graph, Vertex user, String oldDeviceGuid) {
-        Vertex device = createDevice(graph, user);
-        device.setProperty("oldDeviceGuid", oldDeviceGuid);
         return device;
     }
 

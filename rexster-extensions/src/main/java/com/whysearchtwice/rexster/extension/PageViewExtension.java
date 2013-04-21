@@ -32,6 +32,17 @@ public class PageViewExtension extends AbstractParsleyExtension {
         System.out.println("--- A NEW REQUEST ---");
         System.out.println(attributes.toString());
 
+        // Check that the device is valid before doing anything else
+        Vertex device;
+        try {
+            device = graph.getVertex(attributes.get("deviceGuid"));
+            if (device == null || device.getProperty("type") != "device") {
+                return ExtensionResponse.error("Invalid deviceGuid, please recreate");
+            }
+        } catch (JSONException e) {
+            return ExtensionResponse.error("JSON Exception");
+        }
+
         // Create the new Vertex
         Vertex newVertex = graph.addVertex(null);
 
@@ -60,16 +71,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
         }
 
         // Link to the device the pageView came from
-        try {
-            Vertex device = graph.getVertex(attributes.get("deviceGuid"));
-            if (device == null || device.getProperty("type") != "device") {
-                return ExtensionResponse.error("Invalid deviceGuid, please recreate");
-            } else {
-                graph.addEdge(null, device, newVertex, "viewed");
-            }
-        } catch (JSONException e) {
-            return ExtensionResponse.error("JSON Exception");
-        }
+        graph.addEdge(null, device, newVertex, "viewed");
 
         // Link to the domain of the page URL
         try {
