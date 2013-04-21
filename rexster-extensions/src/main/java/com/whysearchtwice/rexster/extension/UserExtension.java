@@ -36,7 +36,7 @@ public class UserExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(map);
     }
 
-    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "lookupUser", method = HttpMethod.GET)
+    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "lookup", method = HttpMethod.GET)
     @ExtensionDescriptor(description = "find a user based on their email")
     public ExtensionResponse lookupUser(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph,
             @ExtensionRequestParameter(name = "emailAddress", defaultValue = "", description = "An email address to look up") String emailAddress) {
@@ -49,8 +49,10 @@ public class UserExtension extends AbstractParsleyExtension {
                 String potentialEmail = (String) v.getProperty("emailAddress");
                 if (potentialEmail != null && potentialEmail.equals(emailAddress)) {
                     map.put("userGuid", v.getId().toString());
+                    return ExtensionResponse.ok(map);
                 }
             }
+            map.put("message", "No user found with that email address");
         } else {
             return ExtensionResponse.error("Must include an email address");
         }
@@ -58,16 +60,18 @@ public class UserExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(map);
     }
 
-    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "createDevice", method = HttpMethod.GET)
+    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "createDevice", method = HttpMethod.POST)
     @ExtensionDescriptor(description = "create a new device (and optionally user)")
-    public ExtensionResponse createDevice(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph,
-            @ExtensionRequestParameter(name = "userGuid", defaultValue = "", description = "userGuid which the device should be bound to") String existingUserGuid,
-            @ExtensionRequestParameter(name = "emailAddress", defaultValue = "", description = "An optional email address to attach to the user") String emailAddress) {
+    public ExtensionResponse createDevice(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
+
+        JSONObject attributes = context.getRequestObject();
+        String existingUserGuid = attributes.optString("userGuid", null);
+        String emailAddress = attributes.optString("emailAddress", null);
 
         // Map to store the results
         Map<String, String> map = new HashMap<String, String>();
 
-        if (existingUserGuid.length() > 0) {
+        if (existingUserGuid != null) {
             // Check that this is a valid user
             Vertex user = graph.getVertex(existingUserGuid);
             if (user == null || !user.getProperty("type").equals("user")) {
@@ -89,11 +93,13 @@ public class UserExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(map);
     }
 
-    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "renew", method = HttpMethod.GET)
+    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "renew", method = HttpMethod.POST)
     @ExtensionDescriptor(description = "get a new user or device or look up existing")
-    public ExtensionResponse renewUserOrDevice(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph,
-            @ExtensionRequestParameter(name = "userGuid", defaultValue = "", description = "A userGuid may or may not be valid") String oldUserGuid,
-            @ExtensionRequestParameter(name = "deviceGuid", defaultValue = "", description = "An optional deviceGuid that may or may not be valid") String oldDeviceGuid) {
+    public ExtensionResponse renewUserOrDevice(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
+
+        JSONObject attributes = context.getRequestObject();
+        String oldUserGuid = attributes.optString("userGuid", "");
+        String oldDeviceGuid = attributes.optString("deviceGuid", "");
 
         // Map to store the results
         Map<String, String> map = new HashMap<String, String>();
@@ -133,7 +139,7 @@ public class UserExtension extends AbstractParsleyExtension {
         user.setProperty("type", "user");
         user.setProperty("timeCreated", System.currentTimeMillis());
 
-        if (emailAddress.length() > 0) {
+        if (emailAddress != null && emailAddress.length() > 0) {
             user.setProperty("emailAddress", emailAddress);
         }
 
