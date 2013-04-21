@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -34,13 +35,17 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
         // Check that the device is valid before doing anything else
         Vertex device;
-        try {
-            device = graph.getVertex(attributes.get("deviceGuid"));
-            if (device == null || device.getProperty("type") != "device") {
-                return ExtensionResponse.error("Invalid deviceGuid, please recreate");
+        if (!attributes.has("deviceGuid")) {
+            return ExtensionResponse.error("Missing deviceGuid", new IllegalArgumentException(), 400);
+        } else {
+            try {
+                device = graph.getVertex(attributes.get("deviceGuid"));
+                if (device == null || device.getProperty("type") != "device") {
+                    return ExtensionResponse.error("Invalid deviceGuid, please recreate", new NoSuchElementException(), 400);
+                }
+            } catch (JSONException e) {
+                return ExtensionResponse.error("JSON Exception");
             }
-        } catch (JSONException e) {
-            return ExtensionResponse.error("JSON Exception");
         }
 
         // Create the new Vertex
