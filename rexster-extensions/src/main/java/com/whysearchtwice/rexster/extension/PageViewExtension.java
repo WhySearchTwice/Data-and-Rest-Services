@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.glassfish.grizzly.http.server.Response;
 
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
@@ -40,7 +41,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
         } else {
             try {
                 device = graph.getVertex(attributes.get("deviceGuid"));
-                if (device == null || device.getProperty("type") != "device") {
+                if (device == null || !device.getProperty("type").equals("device")) {
                     return ExtensionResponse.error("Invalid deviceGuid, please recreate", new NoSuchElementException(), 400);
                 }
             } catch (JSONException e) {
@@ -91,6 +92,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
         }
 
         return ExtensionResponse.ok(map);
+        //resp.setHeader("X-Chrome-Exponential-Throttling", disable)
     }
 
     @ExtensionDefinition(extensionPoint = ExtensionPoint.VERTEX, method = HttpMethod.POST)

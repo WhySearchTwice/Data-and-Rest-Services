@@ -5,7 +5,9 @@ import java.util.Map;
 
 import com.thinkaurelius.titan.core.TitanGraph;
 import com.thinkaurelius.titan.core.TitanKey;
+import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.rexster.RexsterResourceContext;
 import com.tinkerpop.rexster.extension.ExtensionDefinition;
 import com.tinkerpop.rexster.extension.ExtensionDescriptor;
@@ -26,9 +28,9 @@ public class CreateIndices extends AbstractParsleyExtension {
             TitanGraph tg = (TitanGraph) graph;
 
             System.out.println("Creating Vertex Indices");
-            tg.makeType().name("username").indexed().dataType(String.class).makePropertyKey();
-            tg.makeType().name("domain").indexed().dataType(String.class).makePropertyKey();
-            TitanKey pageOpenTime = tg.makeType().name("pageOpenTime").dataType(Long.class).indexed().unique().functional().makePropertyKey();
+            tg.makeType().name("username").dataType(String.class).unique(Direction.OUT).indexed(Vertex.class).makePropertyKey();
+            tg.makeType().name("domain").dataType(String.class).unique(Direction.OUT).indexed(Vertex.class).makePropertyKey();
+            TitanKey pageOpenTime = tg.makeType().name("pageOpenTime").dataType(Long.class).unique(Direction.OUT).indexed(Vertex.class).makePropertyKey();
 
             System.out.println("Creating Edge Indices");
             tg.makeType().name("viewed").primaryKey(pageOpenTime).makeEdgeLabel();
