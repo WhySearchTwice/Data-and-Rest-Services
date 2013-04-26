@@ -49,4 +49,16 @@ public interface PageView extends VertexFrame {
 
     @Adjacency(label = "under")
     public void setDomain(Domain domain);
+
+    @Adjacency(label = "successorTo")
+    public Iterable<PageView> getPredecessors();
+
+    @Adjacency(label = "successorTo")
+    public void addPredecessor(PageView pageview);
+
+    @Adjacency(label = "childOf")
+    public Iterable<PageView> getParents();
+
+    @Adjacency(label = "childOf")
+    public void addParent(PageView pageview);
 }
