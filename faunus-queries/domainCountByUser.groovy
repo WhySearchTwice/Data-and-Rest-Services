@@ -62,7 +62,7 @@ def map(v, args) {
 		// Perform a query, gathering the number of times each domain has been visited by this user
 		countPipeline = user.out('owns').out('viewed').out('under').groupCount{it.id}.cap
 
-		while(countPipeline.hasNext()) {
+		if(countPipeline.hasNext()) {
 			// Results come in the form of a map like this --> `domainVertexId : count`
 			results = countPipeline.next()
 			for(entry in results) {
