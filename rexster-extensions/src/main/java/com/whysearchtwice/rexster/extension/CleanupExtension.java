@@ -18,7 +18,7 @@ import com.tinkerpop.rexster.extension.ExtensionPoint;
 import com.tinkerpop.rexster.extension.ExtensionResponse;
 import com.tinkerpop.rexster.extension.HttpMethod;
 import com.tinkerpop.rexster.extension.RexsterContext;
-import com.whysearchtwice.container.PageView;
+import com.whysearchtwice.container.PageViewUtils;
 
 @ExtensionNaming(name = CleanupExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class CleanupExtension extends AbstractParsleyExtension {
@@ -35,7 +35,7 @@ public class CleanupExtension extends AbstractParsleyExtension {
         try {
             for (Object result : doSearch(vertex)) {
                 if (result instanceof Vertex) {
-                    results.accumulate("results", new PageView((Vertex) result).exportJson());
+                    results.accumulate("results", new PageViewUtils((Vertex) result).exportJson());
                 }
             }
         } catch (JSONException e) {

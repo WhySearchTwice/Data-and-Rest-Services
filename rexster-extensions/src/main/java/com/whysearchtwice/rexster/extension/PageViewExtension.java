@@ -11,8 +11,11 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.glassfish.grizzly.http.server.Response;
 
+import com.thinkaurelius.titan.core.Titan;
+import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.frames.FramedGraph;
 import com.tinkerpop.rexster.RexsterResourceContext;
 import com.tinkerpop.rexster.extension.ExtensionDefinition;
 import com.tinkerpop.rexster.extension.ExtensionDescriptor;
@@ -21,7 +24,10 @@ import com.tinkerpop.rexster.extension.ExtensionPoint;
 import com.tinkerpop.rexster.extension.ExtensionResponse;
 import com.tinkerpop.rexster.extension.HttpMethod;
 import com.tinkerpop.rexster.extension.RexsterContext;
-import com.whysearchtwice.container.PageView;
+import com.whysearchtwice.container.PageViewUtils;
+import com.whysearchtwice.frames.Device;
+import com.whysearchtwice.frames.Domain;
+import com.whysearchtwice.frames.PageView;
 
 @ExtensionNaming(name = PageViewExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class PageViewExtension extends AbstractParsleyExtension {
@@ -30,60 +36,46 @@ public class PageViewExtension extends AbstractParsleyExtension {
     @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, method = HttpMethod.POST)
     @ExtensionDescriptor(description = "create a new vertex in the graph")
     public ExtensionResponse createNewVertex(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
+        FramedGraph<TitanGraph> manager = new FramedGraph<TitanGraph>((TitanGraph) graph);
+
         JSONObject attributes = context.getRequestObject();
         System.out.println("--- A NEW REQUEST ---");
         System.out.println(attributes.toString());
 
         // Check that the device is valid before doing anything else
-        Vertex device;
-        if (!attributes.has("deviceGuid")) {
-            return ExtensionResponse.error("Missing deviceGuid", new IllegalArgumentException(), 400);
-        } else {
-            try {
-                device = graph.getVertex(attributes.get("deviceGuid"));
-                if (device == null || !device.getProperty("type").equals("device")) {
-                    return ExtensionResponse.error("Invalid deviceGuid, please recreate", new NoSuchElementException(), 400);
-                }
-            } catch (JSONException e) {
-                return ExtensionResponse.error("JSON Exception");
-            }
+        Device device;
+        try {
+            device = getDevice(attributes, manager);
+        } catch (IllegalArgumentException e) {
+            return ExtensionResponse.error("Invalid or missing deviceGuid", new IllegalArgumentException(), 400);
         }
 
         // Create the new Vertex
-        Vertex newVertex = graph.addVertex(null);
-
-        try {
-            updateVertexProperties(newVertex, attributes);
-        } catch (JSONException e) {
-            return ExtensionResponse.error("Unable to set properties on new vertex");
-        }
+        PageView newPageView = manager.addVertex(null, PageView.class);
+        PageViewUtils.PopulatePageView(newPageView, manager, attributes);
 
         // Return the id of the new Vertex
         Map<String, String> map = new HashMap<String, String>();
-        map.put("id", newVertex.getId().toString());
+        map.put("id", newPageView.asVertex().getId().toString());
 
         // Create an edge to the Predecessor or Parent if needed
         try {
             if (attributes.has("predecessor")) {
-                boolean result = createEdge(graph, newVertex, attributes.getString("predecessor"), "successorTo");
-                map.put("predecessor", (result) ? "predecessor created successfully" : "predecessor could not be created");
+                newPageView.addPredecessor(manager.getVertex(attributes.getString("predecessor"), PageView.class));
             }
             if (attributes.has("parent")) {
-                boolean result = createEdge(graph, newVertex, attributes.getString("parent"), "childOf");
-                map.put("parent", (result) ? "parent created successfully" : "parent could not be created");
+                newPageView.addParent(manager.getVertex(attributes.getString("parent"), PageView.class));
             }
         } catch (JSONException e) {
             return ExtensionResponse.error("Unable to create edge between vertex and parent or predecessor");
         }
 
-        // Link to the device the pageView came from
-        graph.addEdge(null, device, newVertex, "viewed");
+        device.addPageView(newPageView);
 
         // Link to the domain of the page URL
         try {
             if (attributes.has("pageUrl")) {
-                Vertex domainVertex = findOrCreateDomainVertex(graph, extractDomain(attributes.getString("pageUrl")));
-                graph.addEdge(null, newVertex, domainVertex, "under");
+                findAndSetDomain(manager, extractDomain(attributes.getString("pageUrl")), newPageView);
             }
         } catch (URISyntaxException e) {
             return ExtensionResponse.error("URI Syntax Exception");
@@ -92,7 +84,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
         }
 
         return ExtensionResponse.ok(map);
-        //resp.setHeader("X-Chrome-Exponential-Throttling", disable)
+        // resp.setHeader("X-Chrome-Exponential-Throttling", disable)
     }
 
     @ExtensionDefinition(extensionPoint = ExtensionPoint.VERTEX, method = HttpMethod.POST)
@@ -103,6 +95,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
         }
 
         try {
+            PageViewUtils.PopulatePageView(newPageView, manager, attributes);
             updateVertexProperties(vertex, context.getRequestObject());
         } catch (JSONException e) {
             return ExtensionResponse.error("Cannot merge properties into existing vertex");
@@ -115,19 +108,13 @@ public class PageViewExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(map);
     }
 
-    private boolean createEdge(Graph graph, Vertex v1, String v2id, String message1) {
-        Vertex v2 = graph.getVertex(v2id);
-        if (v2 != null) {
-            graph.addEdge(null, v1, v2, message1);
-            return true;
+    private Device getDevice(JSONObject attributes, FramedGraph<TitanGraph> manager) {
+        Device device = manager.frame(manager.getVertex(attributes.optString("deviceGuid")), Device.class);
+        if (device.getType().equals("device")) {
+            return device;
         } else {
-            return false;
+            throw new NoSuchElementException();
         }
-    }
-
-    private void updateVertexProperties(Vertex v, JSONObject attributes) throws JSONException {
-        PageView newAttributes = new PageView(attributes);
-        newAttributes.mergeIntoVertex(v);
     }
 
     private String extractDomain(String pageUrl) throws URISyntaxException {
@@ -141,15 +128,17 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
     }
 
-    private Vertex findOrCreateDomainVertex(Graph graph, String domain) {
-        Iterator<Vertex> iter = graph.getVertices("domain", domain).iterator();
+    private void findAndSetDomain(FramedGraph<TitanGraph> manager, String domain, PageView pv) {
+        Iterator<Vertex> iter = manager.getBaseGraph().getVertices("domain", domain).iterator();
+        Domain d = null;
         if (iter.hasNext()) {
-            return iter.next();
+            d = manager.frame(iter.next(), Domain.class);
         } else {
-            Vertex newVertex = graph.addVertex(null);
-            newVertex.setProperty("type", "domain");
-            newVertex.setProperty("domain", domain);
-            return newVertex;
+            d = manager.addVertex(null, Domain.class);
+            d.setDomain(domain);
+            d.setType("domain");
         }
+
+        pv.setDomain(d);
     }
 }

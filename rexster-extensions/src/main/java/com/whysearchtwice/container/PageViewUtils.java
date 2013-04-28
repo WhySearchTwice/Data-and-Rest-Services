@@ -75,7 +75,7 @@ public class PageViewUtils {
      * @return JSONObject
      * @throws JSONException
      */
-    public JSONObject asJSON(PageView pv) throws JSONException {
+    public static JSONObject asJSON(PageView pv) throws JSONException {
         JSONObject json = new JSONObject();
 
         json.put("tabId", pv.getTabId());
@@ -107,7 +107,7 @@ public class PageViewUtils {
      * @param attributes
      *            JSONObject to retrieve attributes from
      */
-    public void PopulatePageView(PageView pv, FramedGraph<TitanGraph> manager, JSONObject attributes) {
+    public static void PopulatePageView(PageView pv, FramedGraph<TitanGraph> manager, JSONObject attributes) {
         Iterator keysIter = attributes.keys();
         while (keysIter.hasNext()) {
             String key = (String) keysIter.next();

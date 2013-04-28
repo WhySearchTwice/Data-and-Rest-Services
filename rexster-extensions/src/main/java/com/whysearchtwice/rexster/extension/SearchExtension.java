@@ -18,7 +18,7 @@ import com.tinkerpop.rexster.extension.ExtensionRequestParameter;
 import com.tinkerpop.rexster.extension.ExtensionResponse;
 import com.tinkerpop.rexster.extension.HttpMethod;
 import com.tinkerpop.rexster.extension.RexsterContext;
-import com.whysearchtwice.container.PageView;
+import com.whysearchtwice.container.PageViewUtils;
 
 @ExtensionNaming(name = SearchExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class SearchExtension extends AbstractParsleyExtension {
@@ -92,7 +92,7 @@ public class SearchExtension extends AbstractParsleyExtension {
      */
     private void addVertexToList(JSONObject results, Vertex v, boolean successors, boolean children) throws JSONException {
         // Add this vertex to the results list
-        PageView pv = new PageView(v);
+        PageViewUtils pv = new PageViewUtils(v);
         results.accumulate("results", pv.exportJson());
 
         // Add a reference to the parent and successors if edges exist
