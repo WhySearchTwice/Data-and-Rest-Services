@@ -95,26 +95,28 @@ def map(v, args) {
 
 			// Set device stats
 			if(deviceStats[deviceGuid] != null) {
-				deviceStats[deviceGuid][1] += 1
-				deviceStats[deviceGuid][2] += timeVisited
+				deviceStats[deviceGuid].count += 1
+				deviceStats[deviceGuid].time += timeVisited
 			} else {
-				deviceStats[deviceGuid] = [deviceGuid, 1, timeVisited]
+				deviceStats[deviceGuid] = ["deviceGuid": deviceGuid, "count": 1, "time": timeVisited]
 			}
 
 			// Set domain stats
 			if(domainStats[domainGuid] != null) {
-				domainStats[domainGuid][1] += 1
-				domainStats[domainGuid][2] += timeVisited
+				domainStats[domainGuid].count += 1
+				domainStats[domainGuid].time += timeVisited
 			} else {
-				domainStats[domainGuid] = [domainGuid, 1, timeVisited]
+				domainStats[domainGuid] = ["domainGuid": domainGuid, "count": 1, "time": timeVisited]
 			}
 		}
 
 		// Sort the result maps
-		domainStatsByCount = domainStats.values().sort{ a, b -> b[1] <=> a[1] }
-		domainStatsByTime = domainStats.values().sort{ a, b -> b[2] <=> a[2] }
-		deviceStatsByCount = deviceStats.values().sort{ a, b -> b[1] <=> a[1] }
-		deviceStatsByTime = deviceStats.values().sort{ a, b -> b[2] <=> a[2] }
+		domainStatsByCount = domainStats.values().sort{ a, b -> b.count <=> a.count }
+		domainStatsByTime = domainStats.values().sort{ a, b -> b.time <=> a.time }
+		deviceStatsByCount = deviceStats.values().sort{ a, b -> b.count <=> a.count }
+		deviceStatsByTime = deviceStats.values().sort{ a, b -> b.time <=> a.time }
+
+		// Convert the results to JSON and store
 	}
 }
 
