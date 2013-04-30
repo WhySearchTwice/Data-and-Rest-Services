@@ -21,8 +21,8 @@ import com.tinkerpop.rexster.extension.ExtensionPoint;
 import com.tinkerpop.rexster.extension.ExtensionResponse;
 import com.tinkerpop.rexster.extension.HttpMethod;
 import com.tinkerpop.rexster.extension.RexsterContext;
-import com.whysearchtwice.container.PageViewUtils;
 import com.whysearchtwice.frames.PageView;
+import com.whysearchtwice.utils.PageViewUtils;
 
 @ExtensionNaming(name = CleanupExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class CleanupExtension extends AbstractParsleyExtension {

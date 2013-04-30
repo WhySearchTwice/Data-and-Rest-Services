@@ -1,4 +1,4 @@
-package com.whysearchtwice.container;
+package com.whysearchtwice.utils;
 
 import java.util.Iterator;
 

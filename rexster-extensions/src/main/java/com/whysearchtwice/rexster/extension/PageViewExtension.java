@@ -22,10 +22,10 @@ import com.tinkerpop.rexster.extension.ExtensionPoint;
 import com.tinkerpop.rexster.extension.ExtensionResponse;
 import com.tinkerpop.rexster.extension.HttpMethod;
 import com.tinkerpop.rexster.extension.RexsterContext;
-import com.whysearchtwice.container.PageViewUtils;
 import com.whysearchtwice.frames.Device;
 import com.whysearchtwice.frames.Domain;
 import com.whysearchtwice.frames.PageView;
+import com.whysearchtwice.utils.PageViewUtils;
 
 @ExtensionNaming(name = PageViewExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class PageViewExtension extends AbstractParsleyExtension {

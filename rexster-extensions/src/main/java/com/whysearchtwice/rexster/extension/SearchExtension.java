@@ -19,8 +19,8 @@ import com.tinkerpop.rexster.extension.ExtensionRequestParameter;
 import com.tinkerpop.rexster.extension.ExtensionResponse;
 import com.tinkerpop.rexster.extension.HttpMethod;
 import com.tinkerpop.rexster.extension.RexsterContext;
-import com.whysearchtwice.container.PageViewUtils;
 import com.whysearchtwice.frames.PageView;
+import com.whysearchtwice.utils.PageViewUtils;
 
 @ExtensionNaming(name = SearchExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class SearchExtension extends AbstractParsleyExtension {
