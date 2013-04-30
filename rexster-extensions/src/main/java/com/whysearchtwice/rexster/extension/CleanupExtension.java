@@ -6,7 +6,10 @@ import java.util.Map;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import com.thinkaurelius.titan.core.TitanGraph;
+import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.frames.FramedGraph;
 import com.tinkerpop.gremlin.groovy.Gremlin;
 import com.tinkerpop.pipes.Pipe;
 import com.tinkerpop.pipes.util.iterators.SingleIterator;
@@ -19,6 +22,7 @@ import com.tinkerpop.rexster.extension.ExtensionResponse;
 import com.tinkerpop.rexster.extension.HttpMethod;
 import com.tinkerpop.rexster.extension.RexsterContext;
 import com.whysearchtwice.container.PageViewUtils;
+import com.whysearchtwice.frames.PageView;
 
 @ExtensionNaming(name = CleanupExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class CleanupExtension extends AbstractParsleyExtension {
@@ -26,17 +30,17 @@ public class CleanupExtension extends AbstractParsleyExtension {
 
     @ExtensionDefinition(extensionPoint = ExtensionPoint.VERTEX, path = "openTabs", method = HttpMethod.GET)
     @ExtensionDescriptor(description = "retrieve JSON object of open tabs for user or device")
-    public ExtensionResponse retrieveOpenTabs(@RexsterContext Vertex vertex) {
+    public ExtensionResponse retrieveOpenTabs(@RexsterContext Graph graph, @RexsterContext Vertex vertex) {
         if (vertex == null) {
             return ExtensionResponse.error("Invalid vertex");
         }
 
+        FramedGraph<TitanGraph> manager = new FramedGraph<TitanGraph>((TitanGraph) graph);
+
         JSONObject results = new JSONObject();
         try {
-            for (Object result : doSearch(vertex)) {
-                if (result instanceof Vertex) {
-                    results.accumulate("results", new PageViewUtils((Vertex) result).exportJson());
-                }
+            for (PageView pv : manager.frameVertices(doSearch(vertex), PageView.class)) {
+                results.accumulate("results", PageViewUtils.asJSON(pv));
             }
         } catch (JSONException e) {
             return ExtensionResponse.error("Failed to create JSON Result");
@@ -49,27 +53,24 @@ public class CleanupExtension extends AbstractParsleyExtension {
 
     @ExtensionDefinition(extensionPoint = ExtensionPoint.VERTEX, path = "closeTabs", method = HttpMethod.POST)
     @ExtensionDescriptor(description = "close tabs open on a user or device")
-    public ExtensionResponse closeOpenTabs(@RexsterContext RexsterResourceContext context, @RexsterContext Vertex vertex) {
+    public ExtensionResponse closeOpenTabs(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph, @RexsterContext Vertex vertex) {
         if (vertex == null) {
             return ExtensionResponse.error("Invalid vertex");
         }
 
         JSONObject attributes = context.getRequestObject();
+        FramedGraph<TitanGraph> manager = new FramedGraph<TitanGraph>((TitanGraph) graph);
 
         int counter = 0;
         try {
-            for (Object result : doSearch(vertex)) {
-                if (result instanceof Vertex) {
-                    Vertex resultVertex = (Vertex) result;
-
-                    // If vertex is not in the exclude list, close it with -1
-                    String tabId = resultVertex.getProperty("tabId").toString();
-                    if (attributes.has(tabId) && attributes.getString(tabId).equals((String) resultVertex.getProperty("pageUrl"))) {
-                        // Do not close this tab
-                    } else {
-                        resultVertex.setProperty("pageCloseTime", -1);
-                        counter++;
-                    }
+            for (PageView pv : manager.frameVertices(doSearch(vertex), PageView.class)) {
+                // If vertex is not in the exclude list, close it with -1
+                String tabId = Integer.toString(pv.getTabId());
+                if (attributes.has(tabId) && attributes.getString(tabId).equals(pv.getPageUrl())) {
+                    // Do not close this tab
+                } else {
+                    pv.setPageCloseTime(-1L);
+                    counter++;
                 }
             }
         } catch (JSONException e) {
@@ -83,7 +84,7 @@ public class CleanupExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(response);
     }
 
-    private Pipe doSearch(Vertex startingVertex) throws Exception {
+    private Pipe<Vertex, Vertex> doSearch(Vertex startingVertex) throws Exception {
         String gremlinQuery = null;
         String type = (String) startingVertex.getProperty("type");
 
@@ -96,7 +97,8 @@ public class CleanupExtension extends AbstractParsleyExtension {
             throw new Exception("Vertex is not a user or device");
         }
 
-        Pipe pipe = Gremlin.compile(gremlinQuery);
+        @SuppressWarnings("unchecked")
+        Pipe<Vertex, Vertex> pipe = (Pipe<Vertex, Vertex>) Gremlin.compile(gremlinQuery);
         pipe.setStarts(new SingleIterator<Vertex>(startingVertex));
         return pipe;
     }

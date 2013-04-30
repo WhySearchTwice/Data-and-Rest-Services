@@ -9,7 +9,7 @@ import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.frames.FramedGraph;
 import com.whysearchtwice.frames.PageView;
 
-public class PageViewUtils {
+public final class PageViewUtils {
     private enum Property {
         type {
             @Override
@@ -107,7 +107,8 @@ public class PageViewUtils {
      * @param attributes
      *            JSONObject to retrieve attributes from
      */
-    public static void PopulatePageView(PageView pv, FramedGraph<TitanGraph> manager, JSONObject attributes) {
+    public static void populatePageView(PageView pv, FramedGraph<TitanGraph> manager, JSONObject attributes) {
+        @SuppressWarnings("rawtypes")
         Iterator keysIter = attributes.keys();
         while (keysIter.hasNext()) {
             String key = (String) keysIter.next();
@@ -117,8 +118,20 @@ public class PageViewUtils {
             } catch (JSONException e) {
                 // The key is from the keys list and will always be there
             } catch (IllegalArgumentException e) {
-                // Any key not in the enum should be be proceed by it
+                // Any key not in the enum should be ignored
             }
         }
+    }
+
+    public static boolean inTimeRange(PageView pv, long searchTime, int timeRange) {
+        long pageOpenTime = pv.getPageOpenTime();
+
+        boolean closeTimeInRange = false;
+        if (pv.getPageCloseTime() != null) {
+            long pageCloseTime = pv.getPageCloseTime();
+            closeTimeInRange = searchTime - timeRange < pageCloseTime && searchTime + timeRange > pageCloseTime;
+        }
+
+        return closeTimeInRange || (searchTime - timeRange < pageOpenTime && searchTime + timeRange > pageOpenTime);
     }
 }

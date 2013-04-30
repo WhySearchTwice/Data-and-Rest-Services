@@ -3,9 +3,10 @@ package com.whysearchtwice.rexster.extension;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
-import com.tinkerpop.blueprints.Direction;
+import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.frames.FramedGraph;
 import com.tinkerpop.gremlin.groovy.Gremlin;
 import com.tinkerpop.pipes.Pipe;
 import com.tinkerpop.pipes.util.iterators.SingleIterator;
@@ -19,6 +20,7 @@ import com.tinkerpop.rexster.extension.ExtensionResponse;
 import com.tinkerpop.rexster.extension.HttpMethod;
 import com.tinkerpop.rexster.extension.RexsterContext;
 import com.whysearchtwice.container.PageViewUtils;
+import com.whysearchtwice.frames.PageView;
 
 @ExtensionNaming(name = SearchExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class SearchExtension extends AbstractParsleyExtension {
@@ -49,6 +51,9 @@ public class SearchExtension extends AbstractParsleyExtension {
             return ExtensionResponse.error("Invalid userGuid");
         }
 
+        // Create the framed graph'
+        FramedGraph<TitanGraph> manager = new FramedGraph<TitanGraph>((TitanGraph) graph);
+
         // Manipulate parameters
         Long openTimeL = Long.parseLong(openTime);
         timeRange = adjustTimeRange(timeRange, units);
@@ -65,13 +70,11 @@ public class SearchExtension extends AbstractParsleyExtension {
 
         // Perform search
         try {
-            Pipe pipe = Gremlin.compile(gremlinQuery);
+            @SuppressWarnings("unchecked")
+            Pipe<Vertex, Vertex> pipe = (Pipe<Vertex, Vertex>) Gremlin.compile(gremlinQuery);
             pipe.setStarts(new SingleIterator<Vertex>(user));
-            for (Object result : pipe) {
-                if (result instanceof Vertex) {
-                    Vertex v = (Vertex) result;
-                    addVertexToList(results, v, successors, children);
-                }
+            for (PageView pv : manager.frameVertices(pipe, PageView.class)) {
+                addVertexToList(results, pv, successors, children, openTimeL, timeRange);
             }
         } catch (JSONException e) {
             return ExtensionResponse.error("Failed to create search results");
@@ -85,34 +88,38 @@ public class SearchExtension extends AbstractParsleyExtension {
      * successors based on parameters.
      * 
      * @param pages
-     * @param v
+     * @param pv
      * @param successors
      * @param children
      * @throws JSONException
      */
-    private void addVertexToList(JSONObject results, Vertex v, boolean successors, boolean children) throws JSONException {
-        // Add this vertex to the results list
-        PageViewUtils pv = new PageViewUtils(v);
-        results.accumulate("results", pv.exportJson());
+    private void addVertexToList(JSONObject results, PageView pv, boolean successors, boolean children, long searchTime, int timeRange) throws JSONException {
+        // Check that this PageView is within the time range. If not return
+        if (!PageViewUtils.inTimeRange(pv, searchTime, timeRange)) {
+            return;
+        }
 
-        // Add a reference to the parent and successors if edges exist
-        for (Vertex neighbor : v.getVertices(Direction.OUT, "childOf")) {
-            pv.setProperty("parentId", neighbor.getId().toString());
-        }
-        for (Vertex neighbor : v.getVertices(Direction.OUT, "successorTo")) {
-            pv.setProperty("predecessorId", neighbor.getId().toString());
-        }
+        // Add this vertex to the results list
+        results.accumulate("results", PageViewUtils.asJSON(pv));
 
         // Recursively search if children or successors should be included
         if (successors) {
-            for (Vertex successor : v.getVertices(Direction.IN, "successorTo")) {
-                addVertexToList(results, successor, successors, children);
+            for (PageView successor : pv.getSuccessors()) {
+                addVertexToList(results, successor, successors, children, searchTime, timeRange);
+            }
+
+            for (PageView predecessor : pv.getPredecessors()) {
+                addVertexToList(results, predecessor, successors, children, searchTime, timeRange);
             }
         }
 
         if (children) {
-            for (Vertex successor : v.getVertices(Direction.IN, "childOf")) {
-                addVertexToList(results, successor, successors, children);
+            for (PageView child : pv.getChildren()) {
+                addVertexToList(results, child, successors, children, searchTime, timeRange);
+            }
+
+            for (PageView parent : pv.getParents()) {
+                addVertexToList(results, parent, successors, children, searchTime, timeRange);
             }
         }
     }

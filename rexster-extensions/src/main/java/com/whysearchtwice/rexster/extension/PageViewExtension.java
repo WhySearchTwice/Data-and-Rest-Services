@@ -9,9 +9,7 @@ import java.util.NoSuchElementException;
 
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.glassfish.grizzly.http.server.Response;
 
-import com.thinkaurelius.titan.core.Titan;
 import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
@@ -52,30 +50,17 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
         // Create the new Vertex
         PageView newPageView = manager.addVertex(null, PageView.class);
-        PageViewUtils.PopulatePageView(newPageView, manager, attributes);
+        PageViewUtils.populatePageView(newPageView, manager, attributes);
+        device.addPageView(newPageView);
 
         // Return the id of the new Vertex
         Map<String, String> map = new HashMap<String, String>();
         map.put("id", newPageView.asVertex().getId().toString());
 
-        // Create an edge to the Predecessor or Parent if needed
-        try {
-            if (attributes.has("predecessor")) {
-                newPageView.addPredecessor(manager.getVertex(attributes.getString("predecessor"), PageView.class));
-            }
-            if (attributes.has("parent")) {
-                newPageView.addParent(manager.getVertex(attributes.getString("parent"), PageView.class));
-            }
-        } catch (JSONException e) {
-            return ExtensionResponse.error("Unable to create edge between vertex and parent or predecessor");
-        }
-
-        device.addPageView(newPageView);
-
         // Link to the domain of the page URL
         try {
             if (attributes.has("pageUrl")) {
-                findAndSetDomain(manager, extractDomain(attributes.getString("pageUrl")), newPageView);
+                newPageView.setDomain(findDomain(manager, extractDomain(attributes.getString("pageUrl"))));
             }
         } catch (URISyntaxException e) {
             return ExtensionResponse.error("URI Syntax Exception");
@@ -89,17 +74,15 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
     @ExtensionDefinition(extensionPoint = ExtensionPoint.VERTEX, method = HttpMethod.POST)
     @ExtensionDescriptor(description = "update an existing vertex in the graph")
-    public ExtensionResponse updateVertex(@RexsterContext RexsterResourceContext context, @RexsterContext Vertex vertex) {
+    public ExtensionResponse updateVertex(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph, @RexsterContext Vertex vertex) {
         if (vertex == null) {
             return ExtensionResponse.error("Invalid vertex, can not update");
         }
 
-        try {
-            PageViewUtils.PopulatePageView(newPageView, manager, attributes);
-            updateVertexProperties(vertex, context.getRequestObject());
-        } catch (JSONException e) {
-            return ExtensionResponse.error("Cannot merge properties into existing vertex");
-        }
+        FramedGraph<TitanGraph> manager = new FramedGraph<TitanGraph>((TitanGraph) graph);
+        PageView pv = manager.frame(vertex, PageView.class);
+
+        PageViewUtils.populatePageView(pv, manager, context.getRequestObject());
 
         // Map to store the results
         Map<String, String> map = new HashMap<String, String>();
@@ -128,17 +111,16 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
     }
 
-    private void findAndSetDomain(FramedGraph<TitanGraph> manager, String domain, PageView pv) {
+    private Domain findDomain(FramedGraph<TitanGraph> manager, String domain) {
         Iterator<Vertex> iter = manager.getBaseGraph().getVertices("domain", domain).iterator();
         Domain d = null;
         if (iter.hasNext()) {
-            d = manager.frame(iter.next(), Domain.class);
+            return manager.frame(iter.next(), Domain.class);
         } else {
             d = manager.addVertex(null, Domain.class);
             d.setDomain(domain);
             d.setType("domain");
+            return d;
         }
-
-        pv.setDomain(d);
     }
 }
