@@ -123,15 +123,15 @@ public final class PageViewUtils {
         }
     }
 
-    public static boolean inTimeRange(PageView pv, long searchTime, int timeRange) {
+    public static boolean inTimeRange(PageView pv, long openRange, long closeRange) {
         long pageOpenTime = pv.getPageOpenTime();
 
         boolean closeTimeInRange = false;
         if (pv.getPageCloseTime() != null) {
             long pageCloseTime = pv.getPageCloseTime();
-            closeTimeInRange = searchTime - timeRange < pageCloseTime && searchTime + timeRange > pageCloseTime;
+            closeTimeInRange = openRange < pageCloseTime && closeRange > pageCloseTime;
         }
 
-        return closeTimeInRange || (searchTime - timeRange < pageOpenTime && searchTime + timeRange > pageOpenTime);
+        return closeTimeInRange || (openRange < pageOpenTime && closeRange > pageOpenTime);
     }
 }

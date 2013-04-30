@@ -33,17 +33,14 @@ public class SearchExtension extends AbstractParsleyExtension {
             @RexsterContext Graph graph,
             @ExtensionRequestParameter(name = "userGuid", defaultValue = "", description = "The user to retrieve information for") String userGuid,
             @ExtensionRequestParameter(name = "domain", defaultValue = "", description = "Retrieve pages with this domain") String domain,
-            @ExtensionRequestParameter(name = "openTime", defaultValue = "", description = "The middle of a time based query") String openTime,
-            @ExtensionRequestParameter(name = "timeRange", defaultValue = "30", description = "The range of time to search around openTime (openTime +- timeRange/2)") Integer timeRange,
-            @ExtensionRequestParameter(name = "timeRangeUnits", defaultValue = "minutes", description = "hours, minutes, seconds") String units,
+            @ExtensionRequestParameter(name = "openRange", defaultValue = "", description = "The start time of a search range (furthest back in history)") long openRange,
+            @ExtensionRequestParameter(name = "closeRange", defaultValue = "", description = "The end time of a search range (furthest forward in history)") long closeRange,
             @ExtensionRequestParameter(name = "includeSuccessors", defaultValue = "false", description = "Whether or not to include all successors to a search result") Boolean successors,
             @ExtensionRequestParameter(name = "includeChildren", defaultValue = "false", description = "Whether or not to include all children of a search result") Boolean children) {
 
         // Catch some errors
-        if (openTime.equals("")) {
-            return ExtensionResponse.error("You should specify an openTime");
-        } else if (userGuid.equals("")) {
-            return ExtensionResponse.error("You should specify a userGuid");
+        if (openRange == 0 || closeRange == 0) {
+            return ExtensionResponse.error("openRange and closeRange must be specified");
         }
 
         Vertex user = graph.getVertex(userGuid);
@@ -54,16 +51,12 @@ public class SearchExtension extends AbstractParsleyExtension {
         // Create the framed graph'
         FramedGraph<TitanGraph> manager = new FramedGraph<TitanGraph>((TitanGraph) graph);
 
-        // Manipulate parameters
-        Long openTimeL = Long.parseLong(openTime);
-        timeRange = adjustTimeRange(timeRange / 2, units);
-
         JSONObject results = new JSONObject();
 
         // Build the search
         String gremlinQuery = "_().out('owns').out('viewed')";
-        gremlinQuery += ".has('pageOpenTime', T.gte, " + (openTimeL - timeRange) + ")";
-        gremlinQuery += ".has('pageOpenTime', T.lte, " + (openTimeL + timeRange) + ")";
+        gremlinQuery += ".has('pageOpenTime', T.gte, " + openRange + ")";
+        gremlinQuery += ".has('pageOpenTime', T.lte, " + closeRange + ")";
         if (!domain.equals("")) {
             gremlinQuery += ".out('under').has('domain', T.eq, '" + domain + "').back(2)";
         }
@@ -74,7 +67,7 @@ public class SearchExtension extends AbstractParsleyExtension {
             Pipe<Vertex, Vertex> pipe = (Pipe<Vertex, Vertex>) Gremlin.compile(gremlinQuery);
             pipe.setStarts(new SingleIterator<Vertex>(user));
             for (PageView pv : manager.frameVertices(pipe, PageView.class)) {
-                addVertexToList(results, pv, successors, children, openTimeL, timeRange);
+                addVertexToList(results, pv, successors, children, openRange, closeRange);
             }
         } catch (JSONException e) {
             return ExtensionResponse.error("Failed to create search results");
@@ -93,9 +86,9 @@ public class SearchExtension extends AbstractParsleyExtension {
      * @param children
      * @throws JSONException
      */
-    private void addVertexToList(JSONObject results, PageView pv, boolean successors, boolean children, long searchTime, int timeRange) throws JSONException {
+    private void addVertexToList(JSONObject results, PageView pv, boolean successors, boolean children, long openRange, long closeRange) throws JSONException {
         // Check that this PageView is within the time range. If not return
-        if (!PageViewUtils.inTimeRange(pv, searchTime, timeRange)) {
+        if (!PageViewUtils.inTimeRange(pv, openRange, closeRange)) {
             return;
         }
 
@@ -105,44 +98,22 @@ public class SearchExtension extends AbstractParsleyExtension {
         // Recursively search if children or successors should be included
         if (successors) {
             for (PageView successor : pv.getSuccessors()) {
-                addVertexToList(results, successor, successors, children, searchTime, timeRange);
+                addVertexToList(results, successor, successors, children, openRange, closeRange);
             }
 
             for (PageView predecessor : pv.getPredecessors()) {
-                addVertexToList(results, predecessor, successors, children, searchTime, timeRange);
+                addVertexToList(results, predecessor, successors, children, openRange, closeRange);
             }
         }
 
         if (children) {
             for (PageView child : pv.getChildren()) {
-                addVertexToList(results, child, successors, children, searchTime, timeRange);
+                addVertexToList(results, child, successors, children, openRange, closeRange);
             }
 
             for (PageView parent : pv.getParents()) {
-                addVertexToList(results, parent, successors, children, searchTime, timeRange);
+                addVertexToList(results, parent, successors, children, openRange, closeRange);
             }
-        }
-    }
-
-    /**
-     * Converts the timeRange to seconds from the given units
-     * 
-     * @param timeRange
-     * @param units
-     * @return int timeRange Timestamp converted to milliseconds
-     */
-    private int adjustTimeRange(int timeRange, String units) {
-        // Convert to milliseconds
-        timeRange *= 1000;
-
-        if (units.equals("seconds")) {
-            return timeRange * 1;
-        } else if (units.equals("minutes")) {
-            return timeRange * 1 * 60;
-        } else if (units.equals("hours")) {
-            return timeRange * 1 * 60 * 60;
-        } else {
-            return timeRange;
         }
     }
 }
