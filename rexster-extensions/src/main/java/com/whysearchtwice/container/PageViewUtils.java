@@ -58,7 +58,7 @@ public final class PageViewUtils {
             @Override
             public void store(PageView pv, Object value, FramedGraph<TitanGraph> manager) {
                 PageView predecessor = manager.getVertex((String) value, PageView.class);
-                pv.addParent(predecessor);
+                pv.addPredecessor(predecessor);
             }
         };
 
