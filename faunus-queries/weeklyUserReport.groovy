@@ -86,12 +86,17 @@ def map(v, args) {
 		deviceStats = [:]
 
 		// Create an iterator over a set of lists in the form [deviceGuid, domainGuid, time on page]
-		topDomainsByTimePipeline = user.out('owns').id.as('device').back(1).out('viewed').filter{it.pageOpenTime > startTime && it.pageCloseTime != null && it.pageCloseTime < endTime}.as('pv').out('under').id.as('domain').transform{p,m -> [m.device, m.domain, m.pv.pageCloseTime - m.pv.pageOpenTime]}
+		// If a pageOpenTime is less than 0 it means the tab crashed. Reset the time to 0
+		topDomainsByTimePipeline = user.out('owns').id.as('device').back(1).out('viewed').filter{it.pageOpenTime > startTime && it.pageCloseTime != null && it.pageCloseTime < endTime}.as('pv').out('under').id.as('domain').transform{p,m -> [m.device, m.domain, java.lang.Math.max(m.pv.pageCloseTime - m.pv.pageOpenTime, 0L), m.pv.id]}
 		while(topDomainsByTimePipeline.hasNext()) {
 			row = topDomainsByTimePipeline.next()
 			deviceGuid = row[0]
 			domainGuid = row[1]
 			timeVisited = row[2]
+
+			if(timeVisited < 0) {
+				println(row)
+			}
 
 			// Set device stats
 			if(deviceStats[deviceGuid] != null) {
