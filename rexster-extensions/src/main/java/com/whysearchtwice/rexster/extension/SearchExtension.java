@@ -56,7 +56,7 @@ public class SearchExtension extends AbstractParsleyExtension {
 
         // Manipulate parameters
         Long openTimeL = Long.parseLong(openTime);
-        timeRange = adjustTimeRange(timeRange, units);
+        timeRange = adjustTimeRange(timeRange / 2, units);
 
         JSONObject results = new JSONObject();
 
