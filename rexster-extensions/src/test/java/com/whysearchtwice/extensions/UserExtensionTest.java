@@ -1,32 +1,21 @@
 package com.whysearchtwice.extensions;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Iterator;
 
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.thinkaurelius.titan.core.TitanFactory;
-import com.thinkaurelius.titan.core.TitanGraph;
-import com.tinkerpop.frames.FramedGraph;
 import com.tinkerpop.rexster.RexsterResourceContext;
 import com.whysearchtwice.frames.Device;
 import com.whysearchtwice.frames.User;
-import com.whysearchtwice.rexster.extension.CreateIndices;
 import com.whysearchtwice.rexster.extension.UserExtension;
 
 @RunWith(JUnit4.class)
-public class UserExtensionTest {
-    private TitanGraph graph;
-    private FramedGraph<TitanGraph> manager;
-
+public class UserExtensionTest extends ExtensionTest {
     @Test
     public void createUser() throws JSONException {
         System.out.println("Testing create user");
@@ -60,50 +49,6 @@ public class UserExtensionTest {
             iter.next();
 
         Assert.assertEquals(2, count);
-    }
-
-    @Before
-    public void setupGraph() {
-        graph = TitanFactory.open("/tmp/titan");
-        manager = new FramedGraph<TitanGraph>(graph);
-
-        CreateIndices indicesExtension = new CreateIndices();
-        RexsterResourceContext ctx = new RexsterResourceContext(null, null, null, new JSONObject(), null, null, null);
-        indicesExtension.createIndices(ctx, graph);
-    }
-
-    @After
-    public void deleteGraph() throws IOException {
-        manager.shutdown();
-        manager = null;
-        if (graph.isOpen()) {
-            graph.shutdown();
-        }
-        graph = null;
-
-        File directory = new File("/tmp/titan");
-        if (directory.exists()) {
-            delete(directory);
-        }
-    }
-
-    private static void delete(File file) throws IOException {
-        if (file.isDirectory()) {
-            if (file.list().length == 0) {
-                file.delete();
-            } else {
-                for (String temp : file.list()) {
-                    File fileDelete = new File(file, temp);
-                    delete(fileDelete);
-                }
-
-                if (file.list().length == 0) {
-                    file.delete();
-                }
-            }
-        } else {
-            file.delete();
-        }
     }
 
     private JSONObject createUser(JSONObject body, UserExtension userExtension) throws JSONException {
