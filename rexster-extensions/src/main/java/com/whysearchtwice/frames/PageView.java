@@ -42,10 +42,10 @@ public interface PageView extends VertexFrame {
     @Property("windowId")
     public int getWindowId();
 
-    @Adjacency(label = "viewed")
+    @Adjacency(label = "viewed", direction = Direction.IN)
     public Iterable<Device> getDevice();
 
-    @Adjacency(label = "viewed")
+    @Adjacency(label = "viewed", direction = Direction.IN)
     public void setDevice(Device device);
 
     @Adjacency(label = "under")
