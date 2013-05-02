@@ -5,6 +5,7 @@ import java.util.Iterator;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -16,6 +17,13 @@ import com.whysearchtwice.rexster.extension.UserExtension;
 
 @RunWith(JUnit4.class)
 public class UserExtensionTest extends ExtensionTest {
+    private static UserExtension userExtension;
+
+    @BeforeClass
+    public static void setupClass() {
+        userExtension = new UserExtension();
+    }
+
     @Test
     public void createUser() throws JSONException {
         System.out.println("Testing create user");
@@ -23,7 +31,6 @@ public class UserExtensionTest extends ExtensionTest {
         JSONObject body = new JSONObject();
         body.put("emailAddress", "testUser@example.com");
 
-        UserExtension userExtension = new UserExtension();
         createUser(body, userExtension);
     }
 
@@ -34,7 +41,6 @@ public class UserExtensionTest extends ExtensionTest {
         JSONObject body = new JSONObject();
         body.put("emailAddress", "testUser@example.com");
 
-        UserExtension userExtension = new UserExtension();
         JSONObject response = createUser(body, userExtension);
 
         // Add the user to the body and issue a create request again
@@ -49,23 +55,5 @@ public class UserExtensionTest extends ExtensionTest {
             iter.next();
 
         Assert.assertEquals(2, count);
-    }
-
-    private JSONObject createUser(JSONObject body, UserExtension userExtension) throws JSONException {
-        RexsterResourceContext ctx = new RexsterResourceContext(null, null, null, body, null, null, null);
-        JSONObject responseContent = (JSONObject) userExtension.createDevice(ctx, graph).getJerseyResponse().getEntity();
-
-        Device device = manager.frame(graph.getVertex(responseContent.getString("deviceGuid")), Device.class);
-        Assert.assertTrue(device.getOwner().iterator().hasNext());
-
-        if (responseContent.has("userGuid")) {
-            User user = manager.frame(graph.getVertex(responseContent.getString("userGuid")), User.class);
-            Assert.assertEquals("testUser@example.com", user.asVertex().getProperty("emailAddress"));
-            Assert.assertEquals("testUser@example.com", user.getEmail());
-
-            Assert.assertEquals(user.asVertex().getId(), device.getOwner().iterator().next().asVertex().getId());
-        }
-
-        return responseContent;
     }
 }
