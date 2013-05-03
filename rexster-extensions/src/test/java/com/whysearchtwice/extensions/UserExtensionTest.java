@@ -60,7 +60,7 @@ public class UserExtensionTest extends ExtensionTest {
 
     @Test
     public void renewUserTest() throws JSONException {
-        System.out.println("Testing renew non-existant user");
+        System.out.println("Testing renew user");
 
         JSONObject body = new JSONObject();
         body.put("userGuid", "an invalid userGuid");
@@ -82,5 +82,32 @@ public class UserExtensionTest extends ExtensionTest {
         response = (JSONObject) userExtension.renewUserOrDevice(ctx, graph).getJerseyResponse().getEntity();
         Assert.assertEquals(userGuid, response.getString("userGuid"));
         Assert.assertEquals(deviceGuid, response.getString("deviceGuid"));
+    }
+
+    @Test
+    public void lookupUserTest() throws JSONException {
+        System.out.println("Testing user lookup");
+
+        // Create a valid user to look up
+        JSONObject body = new JSONObject();
+        body.put("emailAddress", "testUser@example.com");
+        JSONObject response = createUser(body, userExtension);
+        String userGuid = response.getString("userGuid");
+
+        RexsterResourceContext ctx = new RexsterResourceContext(null, null, null, null, null, null, null);
+
+        // Look up valid user
+        response = (JSONObject) userExtension.lookupUser(ctx, graph, "testUser@example.com").getJerseyResponse().getEntity();
+        Assert.assertEquals(userGuid, response.getString("userGuid"));
+
+        // Lookup invalid user
+        response = (JSONObject) userExtension.lookupUser(ctx, graph, "invaludUser@example.com").getJerseyResponse().getEntity();
+        Assert.assertEquals("No user found with that email address", response.getString("message"));
+
+        // Lookup with no email address
+        response = (JSONObject) userExtension.lookupUser(ctx, graph, null).getJerseyResponse().getEntity();
+        Assert.assertEquals("Must include an email address", response.getString("message"));
+        response = (JSONObject) userExtension.lookupUser(ctx, graph, "").getJerseyResponse().getEntity();
+        Assert.assertEquals("Must include an email address", response.getString("message"));
     }
 }

@@ -44,7 +44,7 @@ public class UserExtension extends AbstractParsleyExtension {
         // Map to store the results
         Map<String, String> map = new HashMap<String, String>();
 
-        if (emailAddress.length() > 0) {
+        if (emailAddress != null && emailAddress.length() > 0) {
             for (Vertex v : graph.getVertices("type", "user")) {
                 String potentialEmail = (String) v.getProperty("emailAddress");
                 if (potentialEmail != null && potentialEmail.equals(emailAddress)) {
