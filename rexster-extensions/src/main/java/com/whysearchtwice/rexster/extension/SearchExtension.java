@@ -59,9 +59,9 @@ public class SearchExtension extends AbstractParsleyExtension {
         JSONObject results = new JSONObject();
 
         // Build the search
-        String gremlinQuery = "_().out('owns').out('viewed')";
-        gremlinQuery += ".has('pageOpenTime', T.gte, " + openRangeL + ")";
-        gremlinQuery += ".has('pageOpenTime', T.lte, " + closeRangeL + ")";
+        String gremlinQuery = "_().out('owns').outE('viewed')";
+        gremlinQuery += ".has('pageOpenTime', T.gte, " + openRangeL + ").inV";
+        gremlinQuery += ".has('pageOpenTime', T.lte, " + closeRangeL + ").inV";
         if (!domain.equals("")) {
             gremlinQuery += ".out('under').has('domain', T.eq, '" + domain + "').back(2)";
         }
