@@ -112,7 +112,7 @@ public class CleanupExtensionTest extends ExtensionTest {
         Assert.assertNull(pv1.getPageCloseTime());
         Assert.assertNull(pv2.getPageCloseTime());
 
-        // Get the open tabs
+        // Close the open tabs
         body = new JSONObject();
         ctx = new RexsterResourceContext(null, null, null, body, null, null, null);
         cleanupExtension.closeOpenTabs(ctx, graph, user.asVertex());
