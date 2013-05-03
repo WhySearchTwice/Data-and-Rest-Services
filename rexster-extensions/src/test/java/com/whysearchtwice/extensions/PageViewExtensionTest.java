@@ -124,16 +124,14 @@ public class PageViewExtensionTest extends ExtensionTest {
     }
 
     private JSONObject createBody(String userGuid, String deviceGuid) throws JSONException {
-        JSONObject body = new JSONObject();
-        body.put("type", "pageView");
-        body.put("tabId", 1761);
-        body.put("pageUrl", "http://google.com");
-        body.put("windowId", 515);
-        body.put("pageOpenTime", 1367460869100L);
-        body.put("clientVersion", "0.0.13");
-        body.put("userGuid", userGuid);
-        body.put("deviceGuid", deviceGuid);
-
-        return body;
+        return new JSONObject()
+                .put("type", "pageView")
+                .put("tabId", 1761)
+                .put("pageUrl", "http://google.com")
+                .put("windowId", 515)
+                .put("pageOpenTime", 1367460869100L)
+                .put("clientVersion", "0.0.13")
+                .put("userGuid", userGuid)
+                .put("deviceGuid", deviceGuid);
     }
 }
