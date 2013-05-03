@@ -33,14 +33,19 @@ public class SearchExtension extends AbstractParsleyExtension {
             @RexsterContext Graph graph,
             @ExtensionRequestParameter(name = "userGuid", defaultValue = "", description = "The user to retrieve information for") String userGuid,
             @ExtensionRequestParameter(name = "domain", defaultValue = "", description = "Retrieve pages with this domain") String domain,
-            @ExtensionRequestParameter(name = "openRange", defaultValue = "", description = "The start time of a search range (furthest back in history)") long openRange,
-            @ExtensionRequestParameter(name = "closeRange", defaultValue = "", description = "The end time of a search range (furthest forward in history)") long closeRange,
+            @ExtensionRequestParameter(name = "openRange", defaultValue = "", description = "The start time of a search range (furthest back in history)") String openRange,
+            @ExtensionRequestParameter(name = "closeRange", defaultValue = "", description = "The end time of a search range (furthest forward in history)") String closeRange,
             @ExtensionRequestParameter(name = "includeSuccessors", defaultValue = "false", description = "Whether or not to include all successors to a search result") Boolean successors,
             @ExtensionRequestParameter(name = "includeChildren", defaultValue = "false", description = "Whether or not to include all children of a search result") Boolean children) {
 
         // Catch some errors
-        if (openRange == 0 || closeRange == 0) {
-            return ExtensionResponse.error("openRange and closeRange must be specified");
+        long openRangeL;
+        long closeRangeL;
+        try {
+            openRangeL = Long.parseLong(openRange);
+            closeRangeL = Long.parseLong(closeRange);
+        } catch (Exception e) {
+            return ExtensionResponse.error("openRange and closeRange should be convertable to longs");
         }
 
         Vertex user = graph.getVertex(userGuid);
@@ -55,8 +60,8 @@ public class SearchExtension extends AbstractParsleyExtension {
 
         // Build the search
         String gremlinQuery = "_().out('owns').out('viewed')";
-        gremlinQuery += ".has('pageOpenTime', T.gte, " + openRange + ")";
-        gremlinQuery += ".has('pageOpenTime', T.lte, " + closeRange + ")";
+        gremlinQuery += ".has('pageOpenTime', T.gte, " + openRangeL + ")";
+        gremlinQuery += ".has('pageOpenTime', T.lte, " + closeRangeL + ")";
         if (!domain.equals("")) {
             gremlinQuery += ".out('under').has('domain', T.eq, '" + domain + "').back(2)";
         }
@@ -67,7 +72,7 @@ public class SearchExtension extends AbstractParsleyExtension {
             Pipe<Vertex, Vertex> pipe = (Pipe<Vertex, Vertex>) Gremlin.compile(gremlinQuery);
             pipe.setStarts(new SingleIterator<Vertex>(user));
             for (PageView pv : manager.frameVertices(pipe, PageView.class)) {
-                addVertexToList(results, pv, successors, children, openRange, closeRange);
+                addVertexToList(results, pv, successors, children, openRangeL, closeRangeL);
             }
         } catch (JSONException e) {
             return ExtensionResponse.error("Failed to create search results");
