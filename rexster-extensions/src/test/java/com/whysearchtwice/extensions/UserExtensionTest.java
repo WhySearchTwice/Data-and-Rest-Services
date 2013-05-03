@@ -2,6 +2,7 @@ package com.whysearchtwice.extensions;
 
 import java.util.Iterator;
 
+import com.tinkerpop.blueprints.Vertex;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Assert;
@@ -55,5 +56,31 @@ public class UserExtensionTest extends ExtensionTest {
             iter.next();
 
         Assert.assertEquals(2, count);
+    }
+
+    @Test
+    public void renewUserTest() throws JSONException {
+        System.out.println("Testing renew non-existant user");
+
+        JSONObject body = new JSONObject();
+        body.put("userGuid", "an invalid userGuid");
+        body.put("deviceGuid", "an invalid deviceGuid");
+
+        RexsterResourceContext ctx = new RexsterResourceContext(null, null, null, body, null, null, null);
+        JSONObject response = (JSONObject) userExtension.renewUserOrDevice(ctx, graph).getJerseyResponse().getEntity();
+        String userGuid = response.getString("userGuid");
+        String deviceGuid = response.getString("deviceGuid");
+
+        // Check that a new user was created
+        Vertex v = graph.getVertex(response.getString("userGuid"));
+        Assert.assertNotEquals(null, v);
+        Assert.assertEquals("an invalid userGuid", v.getProperty("oldUserGuid"));
+
+        // Renew again with the invalid userGuid and new valid deviceGuid and check that the same info was returned
+        body.put("deviceGuid", deviceGuid);
+        ctx = new RexsterResourceContext(null, null, null, body, null, null, null);
+        response = (JSONObject) userExtension.renewUserOrDevice(ctx, graph).getJerseyResponse().getEntity();
+        Assert.assertEquals(userGuid, response.getString("userGuid"));
+        Assert.assertEquals(deviceGuid, response.getString("deviceGuid"));
     }
 }
