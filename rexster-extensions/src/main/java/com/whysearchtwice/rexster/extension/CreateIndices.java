@@ -27,12 +27,10 @@ public class CreateIndices extends AbstractParsleyExtension {
         if (graph instanceof TitanGraph) {
             TitanGraph tg = (TitanGraph) graph;
 
-            System.out.println("Creating Vertex Indices");
             tg.makeType().name("username").dataType(String.class).unique(Direction.OUT).indexed(Vertex.class).makePropertyKey();
             tg.makeType().name("domain").dataType(String.class).unique(Direction.OUT).indexed(Vertex.class).makePropertyKey();
             TitanKey pageOpenTime = tg.makeType().name("pageOpenTime").dataType(Long.class).unique(Direction.OUT).indexed(Vertex.class).makePropertyKey();
 
-            System.out.println("Creating Edge Indices");
             tg.makeType().name("viewed").primaryKey(pageOpenTime).makeEdgeLabel();
 
             Map<String, String> result = new HashMap<String, String>();
