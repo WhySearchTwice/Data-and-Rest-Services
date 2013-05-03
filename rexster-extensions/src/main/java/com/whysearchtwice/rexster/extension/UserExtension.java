@@ -1,10 +1,13 @@
 package com.whysearchtwice.rexster.extension;
 
+import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.frames.FramedGraph;
 import com.tinkerpop.rexster.RexsterResourceContext;
 import com.tinkerpop.rexster.extension.*;
 
+import com.whysearchtwice.frames.User;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -15,18 +18,24 @@ import java.util.Map;
 public class UserExtension extends AbstractParsleyExtension {
     public static final String NAME = "user";
 
-    @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "updateUser", method = HttpMethod.POST)
+    @ExtensionDefinition(extensionPoint = ExtensionPoint.VERTEX, path = "email", method = HttpMethod.POST)
     @ExtensionDescriptor(description = "update an email or attach a device")
-    public ExtensionResponse updateUser(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
+    public ExtensionResponse updateEmail(@RexsterContext RexsterResourceContext context, @RexsterContext Vertex vertex, @RexsterContext Graph graph) {
+        if(vertex == null) {
+            return ExtensionResponse.error("Invalid User");
+        }
+
         JSONObject attributes = context.getRequestObject();
         try {
-            if (attributes.has("ownedDeviceGuid")) {
-                linkOwnedDevice(graph, attributes.getString("ownedDeviceGuid"), attributes.getString("userGuid"));
-            } else if (attributes.has("emailAddress")) {
-                updateEmailAddress(graph, attributes.getString("userGuid"), attributes.getString("emailAddress"));
+            if (attributes.has("emailAddress")) {
+                FramedGraph<TitanGraph> manager = new FramedGraph<TitanGraph>((TitanGraph) graph);
+                User user = manager.frame(vertex, User.class);
+                user.setEmail(attributes.getString("emailAddress"));
+            } else {
+                return ExtensionResponse.error("Must include emailAddress");
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            return ExtensionResponse.error("JSONException, please include emailAddress as string");
         }
 
         // Map to store the results
@@ -46,7 +55,7 @@ public class UserExtension extends AbstractParsleyExtension {
 
         if (emailAddress != null && emailAddress.length() > 0) {
             for (Vertex v : graph.getVertices("type", "user")) {
-                String potentialEmail = (String) v.getProperty("emailAddress");
+                String potentialEmail = v.getProperty("emailAddress");
                 if (potentialEmail != null && potentialEmail.equals(emailAddress)) {
                     map.put("userGuid", v.getId().toString());
                     return ExtensionResponse.ok(map);
@@ -161,17 +170,5 @@ public class UserExtension extends AbstractParsleyExtension {
         graph.addEdge(null, user, device, "owns");
 
         return device;
-    }
-
-    private void updateEmailAddress(Graph graph, String userGuid, String username) {
-        Vertex user = graph.getVertex(userGuid);
-        user.setProperty("username", username);
-    }
-
-    private void linkOwnedDevice(Graph graph, String deviceGuid, String userGuid) {
-        Vertex device = graph.getVertex(deviceGuid);
-        Vertex user = graph.getVertex(userGuid);
-
-        graph.addEdge(null, device, user, "owns");
     }
 }

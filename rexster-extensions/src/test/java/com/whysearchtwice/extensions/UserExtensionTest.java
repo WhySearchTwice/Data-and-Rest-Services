@@ -110,4 +110,22 @@ public class UserExtensionTest extends ExtensionTest {
         response = (JSONObject) userExtension.lookupUser(ctx, graph, "").getJerseyResponse().getEntity();
         Assert.assertEquals("Must include an email address", response.getString("message"));
     }
+
+    @Test
+    public void updateEmailAddress() throws JSONException {
+        System.out.println("Testing update user email address");
+
+        // Create a valid user to update
+        JSONObject body = new JSONObject();
+        body.put("emailAddress", "testUser@example.com");
+        JSONObject response = createUser(body, userExtension);
+        User user = manager.frame(graph.getVertex(response.getString("userGuid")), User.class);
+        Assert.assertEquals("testUser@example.com", user.getEmail());
+
+        body.put("emailAddress", "updatedEmail@exmaple.com");
+        body.put("userGuid", user.asVertex().getId());
+        RexsterResourceContext ctx = new RexsterResourceContext(null, null, null, body, null, null, null);
+        userExtension.updateEmail(ctx, user.    asVertex(), graph).getJerseyResponse().getEntity();
+        Assert.assertEquals("updatedEmail@exmaple.com", user.getEmail());
+    }
 }
