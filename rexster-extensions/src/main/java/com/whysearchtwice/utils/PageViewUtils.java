@@ -7,6 +7,7 @@ import org.codehaus.jettison.json.JSONObject;
 
 import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.frames.FramedGraph;
+import com.whysearchtwice.frames.Device;
 import com.whysearchtwice.frames.PageView;
 
 public final class PageViewUtils {
@@ -85,6 +86,11 @@ public final class PageViewUtils {
         json.put("pageUrl", pv.getPageUrl());
         json.put("type", pv.getType());
         json.put("id", pv.asVertex().getId());
+        
+        for (Device device : pv.getDevice()) {
+            // This iterator should only have one item
+            json.put("deviceGuid", device.asVertex().getId());
+        }
 
         for (PageView parent : pv.getParents()) {
             // This iterator should only have one item

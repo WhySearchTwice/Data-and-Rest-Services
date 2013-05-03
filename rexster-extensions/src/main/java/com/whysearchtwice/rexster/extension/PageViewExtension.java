@@ -52,6 +52,8 @@ public class PageViewExtension extends AbstractParsleyExtension {
         PageView newPageView = manager.addVertex(null, PageView.class);
         PageViewUtils.populatePageView(newPageView, manager, attributes);
         device.addPageView(newPageView);
+        
+        newPageView.getViewed().iterator().next().setPageOpenTime(newPageView.getPageOpenTime());
 
         // Return the id of the new Vertex
         Map<String, String> map = new HashMap<String, String>();

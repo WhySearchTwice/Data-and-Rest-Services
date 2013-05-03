@@ -2,6 +2,7 @@ package com.whysearchtwice.frames;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.frames.Adjacency;
+import com.tinkerpop.frames.Incidence;
 import com.tinkerpop.frames.Property;
 import com.tinkerpop.frames.VertexFrame;
 
@@ -42,10 +43,10 @@ public interface PageView extends VertexFrame {
     @Property("windowId")
     public int getWindowId();
 
-    @Adjacency(label = "viewed")
+    @Adjacency(label = "viewed", direction = Direction.IN)
     public Iterable<Device> getDevice();
 
-    @Adjacency(label = "viewed")
+    @Adjacency(label = "viewed", direction = Direction.IN)
     public void setDevice(Device device);
 
     @Adjacency(label = "under")
@@ -77,4 +78,7 @@ public interface PageView extends VertexFrame {
 
     @Adjacency(label = "childOf", direction = Direction.IN)
     public void addChild(PageView pageview);
+    
+    @Incidence(label = "viewed", direction = Direction.IN)
+    public Iterable<Viewed> getViewed();
 }
