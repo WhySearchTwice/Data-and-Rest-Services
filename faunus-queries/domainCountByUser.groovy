@@ -78,7 +78,7 @@ def map(v, args) {
 						edge.visits = entry.value
 					}
 				} else {
-					startingMap = [visits: entry.value]
+					startingMap = [visits: entry.value, domain: domain.domain]
 					startingMap[currentTime] = entry.value
 					g.addEdge(user, domain, "domainVisitCount", startingMap)				
 				}
