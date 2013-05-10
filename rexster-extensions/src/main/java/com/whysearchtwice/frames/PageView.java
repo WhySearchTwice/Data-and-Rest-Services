@@ -8,77 +8,77 @@ import com.tinkerpop.frames.VertexFrame;
 
 public interface PageView extends VertexFrame {
     @Property("type")
-    public void setType(String type);
+    void setType(String type);
 
     @Property("type")
-    public String getType();
+    String getType();
 
     @Property("pageUrl")
-    public void setPageUrl(String pageUrl);
+    void setPageUrl(String pageUrl);
 
     @Property("pageUrl")
-    public String getPageUrl();
+    String getPageUrl();
 
     @Property("pageOpenTime")
-    public void setPageOpenTime(Long pageOpenTime);
+    void setPageOpenTime(Long pageOpenTime);
 
     @Property("pageOpenTime")
-    public Long getPageOpenTime();
+    Long getPageOpenTime();
 
     @Property("pageCloseTime")
-    public void setPageCloseTime(Long pageOpenTime);
+    void setPageCloseTime(Long pageOpenTime);
 
     @Property("pageCloseTime")
-    public Long getPageCloseTime();
+    Long getPageCloseTime();
 
     @Property("tabId")
-    public void setTabId(int tabId);
+    void setTabId(int tabId);
 
     @Property("tabId")
-    public int getTabId();
+    int getTabId();
 
     @Property("windowId")
-    public void setWindowId(int windowId);
+    void setWindowId(int windowId);
 
     @Property("windowId")
-    public int getWindowId();
+    int getWindowId();
 
     @Adjacency(label = "viewed", direction = Direction.IN)
-    public Iterable<Device> getDevice();
+    Iterable<Device> getDevice();
 
     @Adjacency(label = "viewed", direction = Direction.IN)
-    public void setDevice(Device device);
+    void setDevice(Device device);
 
     @Adjacency(label = "under")
-    public Iterable<Domain> getDomain();
+    Iterable<Domain> getDomain();
 
     @Adjacency(label = "under")
-    public void setDomain(Domain domain);
+    void setDomain(Domain domain);
 
     @Adjacency(label = "successorTo")
-    public Iterable<PageView> getPredecessors();
+    Iterable<PageView> getPredecessors();
 
     @Adjacency(label = "successorTo")
-    public void addPredecessor(PageView pageview);
-    
-    @Adjacency(label = "successorTo", direction = Direction.IN)
-    public Iterable<PageView> getSuccessors();
+    void addPredecessor(PageView pageview);
 
     @Adjacency(label = "successorTo", direction = Direction.IN)
-    public void addSuccessor(PageView pageview);
+    Iterable<PageView> getSuccessors();
+
+    @Adjacency(label = "successorTo", direction = Direction.IN)
+    void addSuccessor(PageView pageview);
 
     @Adjacency(label = "childOf")
-    public Iterable<PageView> getParents();
+    Iterable<PageView> getParents();
 
     @Adjacency(label = "childOf")
-    public void addParent(PageView pageview);
-    
-    @Adjacency(label = "childOf", direction = Direction.IN)
-    public Iterable<PageView> getChildren();
+    void addParent(PageView pageview);
 
     @Adjacency(label = "childOf", direction = Direction.IN)
-    public void addChild(PageView pageview);
-    
+    Iterable<PageView> getChildren();
+
+    @Adjacency(label = "childOf", direction = Direction.IN)
+    void addChild(PageView pageview);
+
     @Incidence(label = "viewed", direction = Direction.IN)
-    public Iterable<Viewed> getViewed();
+    Iterable<Viewed> getViewed();
 }
