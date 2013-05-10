@@ -31,7 +31,7 @@ public class AggregateExtension extends AbstractParsleyExtension {
         }
 
         JSONObject results = new JSONObject();
-        List<String> ignoredProperties = Arrays.asList(new String[]{"domain", "_id", "_type", "_outV", "inV", "_label"});
+        List<String> ignoredProperties = Arrays.asList("domain", "_id", "_type", "_outV", "inV", "_label");
 
         try {
             @SuppressWarnings("unchecked")

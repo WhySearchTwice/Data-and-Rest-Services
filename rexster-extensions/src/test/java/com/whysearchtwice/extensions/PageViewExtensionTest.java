@@ -92,7 +92,6 @@ public class PageViewExtensionTest extends ExtensionTest {
 
         ctx = new RexsterResourceContext(null, null, null, body, null, null, null);
         pageViewResponse = pageViewExtension.updateVertex(ctx, graph, vertex).getJerseyResponse();
-        pageViewResponseBody = (JSONObject) pageViewResponse.getEntity();
 
         // Check that the request was successful
         Assert.assertEquals(200, pageViewResponse.getStatus());

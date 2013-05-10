@@ -116,11 +116,10 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
     private Domain findDomain(FramedGraph<TitanGraph> manager, String domain) {
         Iterator<Vertex> iter = manager.getBaseGraph().getVertices("domain", domain).iterator();
-        Domain d = null;
         if (iter.hasNext()) {
             return manager.frame(iter.next(), Domain.class);
         } else {
-            d = manager.addVertex(null, Domain.class);
+            Domain d = manager.addVertex(null, Domain.class);
             d.setDomain(domain);
             d.setType("domain");
             return d;

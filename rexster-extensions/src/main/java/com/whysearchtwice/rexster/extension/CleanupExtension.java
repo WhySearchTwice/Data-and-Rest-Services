@@ -92,7 +92,7 @@ public class CleanupExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(response);
     }
 
-    private Pipe<Vertex, Vertex> doSearch(Vertex startingVertex) throws Exception {
+    private Pipe<Vertex, Vertex> doSearch(Vertex startingVertex) {
         String gremlinQuery = null;
         String type = (String) startingVertex.getProperty("type");
 
@@ -102,7 +102,7 @@ public class CleanupExtension extends AbstractParsleyExtension {
         } else if (type.equals("device")) {
             gremlinQuery = "_().out('viewed').has('pageCloseTime', null)";
         } else {
-            throw new Exception("Vertex is not a user or device");
+            throw new IllegalArgumentException("Vertex is not a user or device");
         }
 
         @SuppressWarnings("unchecked")
