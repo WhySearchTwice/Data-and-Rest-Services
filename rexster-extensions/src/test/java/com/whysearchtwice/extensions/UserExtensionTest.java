@@ -112,20 +112,18 @@ public class UserExtensionTest extends ExtensionTest {
         JSONObject response = createUser(body, userExtension);
         String userGuid = response.getString("userGuid");
 
-        RexsterResourceContext ctx = new RexsterResourceContext(null, null, null, null, null, null, null);
-
         // Look up valid user
-        response = (JSONObject) userExtension.lookupUser(ctx, graph, "testUser@example.com").getJerseyResponse().getEntity();
+        response = (JSONObject) userExtension.lookupUser(graph, "testUser@example.com").getJerseyResponse().getEntity();
         Assert.assertEquals(userGuid, response.getString("userGuid"));
 
         // Lookup invalid user
-        response = (JSONObject) userExtension.lookupUser(ctx, graph, "invaludUser@example.com").getJerseyResponse().getEntity();
+        response = (JSONObject) userExtension.lookupUser(graph, "invaludUser@example.com").getJerseyResponse().getEntity();
         Assert.assertEquals("No user found with that email address", response.getString("message"));
 
         // Lookup with no email address
-        response = (JSONObject) userExtension.lookupUser(ctx, graph, null).getJerseyResponse().getEntity();
+        response = (JSONObject) userExtension.lookupUser(graph, null).getJerseyResponse().getEntity();
         Assert.assertEquals("Must include an email address", response.getString("message"));
-        response = (JSONObject) userExtension.lookupUser(ctx, graph, "").getJerseyResponse().getEntity();
+        response = (JSONObject) userExtension.lookupUser(graph, "").getJerseyResponse().getEntity();
         Assert.assertEquals("Must include an email address", response.getString("message"));
     }
 
