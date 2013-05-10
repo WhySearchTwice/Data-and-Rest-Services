@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.apache.http.HttpStatus;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -45,7 +46,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
         try {
             device = getDevice(attributes, manager);
         } catch (IllegalArgumentException e) {
-            return ExtensionResponse.error("Invalid or missing deviceGuid", new IllegalArgumentException(), 400);
+            return ExtensionResponse.error("Invalid or missing deviceGuid", new IllegalArgumentException(), HttpStatus.SC_BAD_REQUEST);
         }
 
         // Create the new Vertex
