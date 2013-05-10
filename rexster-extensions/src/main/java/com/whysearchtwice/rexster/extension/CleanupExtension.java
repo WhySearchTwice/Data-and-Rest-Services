@@ -1,11 +1,5 @@
 package com.whysearchtwice.rexster.extension;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-
 import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
@@ -14,15 +8,14 @@ import com.tinkerpop.gremlin.groovy.Gremlin;
 import com.tinkerpop.pipes.Pipe;
 import com.tinkerpop.pipes.util.iterators.SingleIterator;
 import com.tinkerpop.rexster.RexsterResourceContext;
-import com.tinkerpop.rexster.extension.ExtensionDefinition;
-import com.tinkerpop.rexster.extension.ExtensionDescriptor;
-import com.tinkerpop.rexster.extension.ExtensionNaming;
-import com.tinkerpop.rexster.extension.ExtensionPoint;
-import com.tinkerpop.rexster.extension.ExtensionResponse;
-import com.tinkerpop.rexster.extension.HttpMethod;
-import com.tinkerpop.rexster.extension.RexsterContext;
+import com.tinkerpop.rexster.extension.*;
 import com.whysearchtwice.frames.PageView;
 import com.whysearchtwice.utils.PageViewUtils;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @ExtensionNaming(name = CleanupExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class CleanupExtension extends AbstractParsleyExtension {
@@ -59,6 +52,7 @@ public class CleanupExtension extends AbstractParsleyExtension {
         }
 
         JSONObject attributes = context.getRequestObject();
+        Map<String, PageView> openPages = new HashMap<String, PageView>();
         FramedGraph<TitanGraph> manager = new FramedGraph<TitanGraph>((TitanGraph) graph);
 
         int counter = 0;
@@ -66,8 +60,22 @@ public class CleanupExtension extends AbstractParsleyExtension {
             for (PageView pv : manager.frameVertices(doSearch(vertex), PageView.class)) {
                 // If vertex is not in the exclude list, close it with -1
                 String tabId = Integer.toString(pv.getTabId());
+
                 if (attributes.has(tabId) && attributes.getString(tabId).equals(pv.getPageUrl())) {
-                    // Do not close this tab
+                    // This tab should not be closed, but check that we don't have duplicates
+                    if (openPages.containsKey(tabId)) {
+                        PageView duplicate = openPages.get(tabId);
+                        // Find which was opened first and close that one
+                        if (pv.getPageOpenTime() > duplicate.getPageOpenTime()) {
+                            duplicate.setPageCloseTime(-1L);
+                            openPages.put(tabId, pv);
+                        } else {
+                            pv.setPageCloseTime(-1L);
+                        }
+                        counter++;
+                    } else {
+                        openPages.put(tabId, pv);
+                    }
                 } else {
                     pv.setPageCloseTime(-1L);
                     counter++;
