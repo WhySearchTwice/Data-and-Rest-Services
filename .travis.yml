@@ -1,4 +1,4 @@
-script: sh -c 'cd rexster-extensions'
+script: sh -c 'cd rexster-extensions && mvn test'
 
 language: java
 jdk:
