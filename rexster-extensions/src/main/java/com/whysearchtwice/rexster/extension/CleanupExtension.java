@@ -2,7 +2,10 @@ package com.whysearchtwice.rexster.extension;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -63,10 +66,16 @@ public class CleanupExtension extends AbstractParsleyExtension {
 
         int counter = 0;
         try {
+            // Create a Set containing all the Guids to leave open
+            JSONArray jsonGuidsArray = attributes.getJSONArray("sessionGuids");
+            Set<String> guidsToLeaveOpen = new TreeSet<String>();
+            for(int i = 0; i < jsonGuidsArray.length(); i++) {
+                guidsToLeaveOpen.add(jsonGuidsArray.getString(i));
+            }
+
             for (PageView pv : manager.frameVertices(doSearch(vertex), PageView.class)) {
                 // If vertex is not in the exclude list, close it with -1
-                String tabId = Integer.toString(pv.getTabId());
-                if (attributes.has(tabId) && attributes.getString(tabId).equals(pv.getPageUrl())) {
+                if (guidsToLeaveOpen.contains(pv.getTabId())) {
                     // Do not close this tab
                 } else {
                     pv.setPageCloseTime(-1L);
