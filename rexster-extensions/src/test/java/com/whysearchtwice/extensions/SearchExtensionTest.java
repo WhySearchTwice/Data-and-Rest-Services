@@ -74,7 +74,7 @@ public class SearchExtensionTest extends ExtensionTest {
         String closeRange = Long.toString(System.currentTimeMillis());
 
         // Perform basic search and validate results
-        response = (JSONObject) searchExtension.searchVertices(ctx, graph, userGuid, "", openRange, closeRange, false, false).getJerseyResponse().getEntity();
+        response = (JSONObject) searchExtension.searchVertices(graph, userGuid, "", openRange, closeRange, false, false).getJerseyResponse().getEntity();
         Assert.assertEquals(2, response.getJSONArray("results").length());
     }
 }

@@ -1,14 +1,5 @@
 package com.whysearchtwice.rexster.extension;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-
 import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
@@ -17,15 +8,17 @@ import com.tinkerpop.gremlin.groovy.Gremlin;
 import com.tinkerpop.pipes.Pipe;
 import com.tinkerpop.pipes.util.iterators.SingleIterator;
 import com.tinkerpop.rexster.RexsterResourceContext;
-import com.tinkerpop.rexster.extension.ExtensionDefinition;
-import com.tinkerpop.rexster.extension.ExtensionDescriptor;
-import com.tinkerpop.rexster.extension.ExtensionNaming;
-import com.tinkerpop.rexster.extension.ExtensionPoint;
-import com.tinkerpop.rexster.extension.ExtensionResponse;
-import com.tinkerpop.rexster.extension.HttpMethod;
-import com.tinkerpop.rexster.extension.RexsterContext;
+import com.tinkerpop.rexster.extension.*;
 import com.whysearchtwice.frames.PageView;
 import com.whysearchtwice.utils.PageViewUtils;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 @ExtensionNaming(name = CleanupExtension.NAME, namespace = AbstractParsleyExtension.NAMESPACE)
 public class CleanupExtension extends AbstractParsleyExtension {
@@ -62,6 +55,7 @@ public class CleanupExtension extends AbstractParsleyExtension {
         }
 
         JSONObject attributes = context.getRequestObject();
+        Map<String, PageView> openPages = new HashMap<String, PageView>();
         FramedGraph<TitanGraph> manager = new FramedGraph<TitanGraph>((TitanGraph) graph);
 
         int counter = 0;
@@ -69,14 +63,30 @@ public class CleanupExtension extends AbstractParsleyExtension {
             // Create a Set containing all the Guids to leave open
             JSONArray jsonGuidsArray = attributes.getJSONArray("sessionGuids");
             Set<String> guidsToLeaveOpen = new TreeSet<String>();
-            for(int i = 0; i < jsonGuidsArray.length(); i++) {
+            for (int i = 0; i < jsonGuidsArray.length(); i++) {
                 guidsToLeaveOpen.add(jsonGuidsArray.getString(i));
             }
 
             for (PageView pv : manager.frameVertices(doSearch(vertex), PageView.class)) {
+                String vertexGuid = Long.toString((Long) pv.asVertex().getId());
+
                 // If vertex is not in the exclude list, close it with -1
-                if (guidsToLeaveOpen.contains(pv.getTabId())) {
-                    // Do not close this tab
+                if (guidsToLeaveOpen.contains(vertexGuid)) {
+                    // This tab should not be closed, but check that we don't have duplicates
+                    if (openPages.containsKey(vertexGuid)) {
+                        PageView duplicate = openPages.get(vertexGuid);
+
+                        // Find which was opened first and close that one
+                        if (pv.getPageOpenTime() > duplicate.getPageOpenTime()) {
+                            duplicate.setPageCloseTime(-1L);
+                            openPages.put(vertexGuid, pv);
+                        } else {
+                            pv.setPageCloseTime(-1L);
+                        }
+                        counter++;
+                    } else {
+                        openPages.put(vertexGuid, pv);
+                    }
                 } else {
                     pv.setPageCloseTime(-1L);
                     counter++;
@@ -93,7 +103,7 @@ public class CleanupExtension extends AbstractParsleyExtension {
         return ExtensionResponse.ok(response);
     }
 
-    private Pipe<Vertex, Vertex> doSearch(Vertex startingVertex) throws Exception {
+    private Pipe<Vertex, Vertex> doSearch(Vertex startingVertex) {
         String gremlinQuery = null;
         String type = (String) startingVertex.getProperty("type");
 
@@ -103,7 +113,7 @@ public class CleanupExtension extends AbstractParsleyExtension {
         } else if (type.equals("device")) {
             gremlinQuery = "_().out('viewed').has('pageCloseTime', null)";
         } else {
-            throw new Exception("Vertex is not a user or device");
+            throw new IllegalArgumentException("Vertex is not a user or device");
         }
 
         @SuppressWarnings("unchecked")

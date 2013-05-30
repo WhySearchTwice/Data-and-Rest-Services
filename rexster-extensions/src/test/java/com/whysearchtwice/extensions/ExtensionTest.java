@@ -28,8 +28,7 @@ public class ExtensionTest {
         manager = new FramedGraph<TitanGraph>(graph);
 
         CreateIndices indicesExtension = new CreateIndices();
-        RexsterResourceContext ctx = new RexsterResourceContext(null, null, null, new JSONObject(), null, null, null);
-        indicesExtension.createIndices(ctx, graph);
+        indicesExtension.createIndices(graph);
     }
 
     @After
@@ -40,7 +39,6 @@ public class ExtensionTest {
         if (graph.isOpen()) {
             graph.shutdown();
         }
-        graph = null;
 
         File directory = new File("/tmp/titan");
         if (directory.exists()) {

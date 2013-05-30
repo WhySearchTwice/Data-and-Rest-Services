@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.apache.http.HttpStatus;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -45,7 +46,7 @@ public class PageViewExtension extends AbstractParsleyExtension {
         try {
             device = getDevice(attributes, manager);
         } catch (IllegalArgumentException e) {
-            return ExtensionResponse.error("Invalid or missing deviceGuid", new IllegalArgumentException(), 400);
+            return ExtensionResponse.error("Invalid or missing deviceGuid", new IllegalArgumentException(), HttpStatus.SC_BAD_REQUEST);
         }
 
         // Create the new Vertex
@@ -115,11 +116,10 @@ public class PageViewExtension extends AbstractParsleyExtension {
 
     private Domain findDomain(FramedGraph<TitanGraph> manager, String domain) {
         Iterator<Vertex> iter = manager.getBaseGraph().getVertices("domain", domain).iterator();
-        Domain d = null;
         if (iter.hasNext()) {
             return manager.frame(iter.next(), Domain.class);
         } else {
-            d = manager.addVertex(null, Domain.class);
+            Domain d = manager.addVertex(null, Domain.class);
             d.setDomain(domain);
             d.setType("domain");
             return d;

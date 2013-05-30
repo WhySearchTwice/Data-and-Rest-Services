@@ -23,7 +23,7 @@ public class CreateIndices extends AbstractParsleyExtension {
 
     @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, method = HttpMethod.POST)
     @ExtensionDescriptor(description = "create the required indices on the graph")
-    public ExtensionResponse createIndices(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph) {
+    public ExtensionResponse createIndices(@RexsterContext Graph graph) {
         if (graph instanceof TitanGraph) {
             TitanGraph tg = (TitanGraph) graph;
 

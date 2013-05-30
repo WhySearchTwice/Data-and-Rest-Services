@@ -47,7 +47,7 @@ public class UserExtension extends AbstractParsleyExtension {
 
     @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, path = "lookup", method = HttpMethod.GET)
     @ExtensionDescriptor(description = "find a user based on their email")
-    public ExtensionResponse lookupUser(@RexsterContext RexsterResourceContext context, @RexsterContext Graph graph,
+    public ExtensionResponse lookupUser(@RexsterContext Graph graph,
             @ExtensionRequestParameter(name = "emailAddress", defaultValue = "", description = "An email address to look up") String emailAddress) {
 
         // Map to store the results
@@ -118,7 +118,7 @@ public class UserExtension extends AbstractParsleyExtension {
         if (user == null || !user.getProperty("type").equals("user")) {
             // Check if there is an "oldUserGuid" on any user nodes
             for (Vertex v : graph.getVertices("type", "user")) {
-                String foundUserGuid = (String) v.getProperty("oldUserGuid");
+                String foundUserGuid = v.getProperty("oldUserGuid");
                 if (foundUserGuid != null && oldUserGuid.equals(foundUserGuid)) {
                     user = v;
                 }

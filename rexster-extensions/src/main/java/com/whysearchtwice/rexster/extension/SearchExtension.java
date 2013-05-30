@@ -29,7 +29,6 @@ public class SearchExtension extends AbstractParsleyExtension {
     @ExtensionDefinition(extensionPoint = ExtensionPoint.GRAPH, method = HttpMethod.GET)
     @ExtensionDescriptor(description = "Get the results of a search")
     public ExtensionResponse searchVertices(
-            @RexsterContext RexsterResourceContext context,
             @RexsterContext Graph graph,
             @ExtensionRequestParameter(name = "userGuid", defaultValue = "", description = "The user to retrieve information for") String userGuid,
             @ExtensionRequestParameter(name = "domain", defaultValue = "", description = "Retrieve pages with this domain") String domain,
@@ -84,11 +83,13 @@ public class SearchExtension extends AbstractParsleyExtension {
     /**
      * Adds a vertex to the list of search results. Will recurse on children or
      * successors based on parameters.
-     * 
-     * @param pages
-     * @param pv
-     * @param successors
-     * @param children
+     *
+     * @param results Object to insert the search results into
+     * @param pv PageView to begin traversing from
+     * @param successors Boolean whether to include successors of nodes
+     * @param children Boolean whether to include children of nodes
+     * @param openRange Long time to begin including PageViews
+     * @param closeRange Long time to stop including PageViews
      * @throws JSONException
      */
     private void addVertexToList(JSONObject results, PageView pv, boolean successors, boolean children, long openRange, long closeRange) throws JSONException {

@@ -1,14 +1,13 @@
 package com.whysearchtwice.utils;
 
-import java.util.Iterator;
-
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-
 import com.thinkaurelius.titan.core.TitanGraph;
 import com.tinkerpop.frames.FramedGraph;
 import com.whysearchtwice.frames.Device;
 import com.whysearchtwice.frames.PageView;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+
+import java.util.Iterator;
 
 public final class PageViewUtils {
     private enum Property {
@@ -51,19 +50,19 @@ public final class PageViewUtils {
         parentId {
             @Override
             public void store(PageView pv, Object value, FramedGraph<TitanGraph> manager) {
-                PageView parent = manager.getVertex((String) value, PageView.class);
+                PageView parent = manager.getVertex(value, PageView.class);
                 pv.addParent(parent);
             }
         },
         predecessorId {
             @Override
             public void store(PageView pv, Object value, FramedGraph<TitanGraph> manager) {
-                PageView predecessor = manager.getVertex((String) value, PageView.class);
+                PageView predecessor = manager.getVertex(value, PageView.class);
                 pv.addPredecessor(predecessor);
             }
         };
 
-        abstract public void store(PageView pv, Object value, FramedGraph<TitanGraph> manager);
+        public abstract void store(PageView pv, Object value, FramedGraph<TitanGraph> manager);
     }
 
     private PageViewUtils() {
@@ -72,7 +71,7 @@ public final class PageViewUtils {
     /**
      * Export the contents of the PageView into a JSON Object for sending back
      * to the client.
-     * 
+     *
      * @return JSONObject
      * @throws JSONException
      */
@@ -86,7 +85,7 @@ public final class PageViewUtils {
         json.put("pageUrl", pv.getPageUrl());
         json.put("type", pv.getType());
         json.put("id", pv.asVertex().getId());
-        
+
         for (Device device : pv.getDevice()) {
             // This iterator should only have one item
             json.put("deviceGuid", device.asVertex().getId());
@@ -107,11 +106,9 @@ public final class PageViewUtils {
 
     /**
      * Add the attributes from a JSONObject to a PageView
-     * 
-     * @param pv
-     *            PageView which should have attributes set on
-     * @param attributes
-     *            JSONObject to retrieve attributes from
+     *
+     * @param pv         PageView which should have attributes set on
+     * @param attributes JSONObject to retrieve attributes from
      */
     public static void populatePageView(PageView pv, FramedGraph<TitanGraph> manager, JSONObject attributes) {
         @SuppressWarnings("rawtypes")

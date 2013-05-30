@@ -14,6 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 
 public class CleanupExtensionTest extends ExtensionTest {
     private static UserExtension userExtension;
@@ -114,6 +115,7 @@ public class CleanupExtensionTest extends ExtensionTest {
 
         // Close the open tabs
         body = new JSONObject();
+        body.put("sessionGuids", new ArrayList());
         ctx = new RexsterResourceContext(null, null, null, body, null, null, null);
         cleanupExtension.closeOpenTabs(ctx, graph, user.asVertex());
 

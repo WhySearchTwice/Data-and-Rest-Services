@@ -5,8 +5,8 @@ import com.tinkerpop.frames.Property;
 
 public interface Viewed extends EdgeFrame {
     @Property("pageOpenTime")
-    public void setPageOpenTime(long pageOpenTime);
-    
+    void setPageOpenTime(long pageOpenTime);
+
     @Property("pageOpenTime")
-    public long getPageOpenTime();
+    long getPageOpenTime();
 }
